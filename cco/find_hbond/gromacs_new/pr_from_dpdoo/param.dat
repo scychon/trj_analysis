@@ -1,0 +1,30 @@
+[ xtcfiles ]
+9
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_eq.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_12ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_25ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_37ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_50ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_62ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_75ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_87ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_100ns.xtc
+[ GLU286 ]
+4398 4399 4400
+[ PRD ]
+114 115 -1
+[ BNC ]
+8795 8796 8797 -1
+[ dcut ]
+1.5
+[ dhbond ]
+0.4
+[ angle_hbond ]
+30
+[ water_idx ]
+56152    169128
+[ outfile ]
+pr_dpdoo_hbond.dat
+pr_dpdoo_hbond_avg.dat
+[ avg_per_nframe ]
+100

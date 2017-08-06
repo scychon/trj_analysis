@@ -1,0 +1,26 @@
+[ xtcfiles ]
+5
+/oasis/scratch/scychon/temp_project/CcO/gromacs/pr_popc/data/cco_pr_popc_7ns_center.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs/pr_popc/data/cco_pr_popc_14ns_center.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs/pr_popc/data/cco_pr_popc_26ns_center.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs/pr_popc/data/cco_pr_popc_38ns_center.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs/pr_popc/data/cco_pr_popc_50ns_center.xtc
+[ GLU286 ]
+4398 4399 4400
+[ PRD ]
+114 115 -1
+[ BNC ]
+8795 8796 8797 -1
+[ dcut ]
+1.5
+[ dhbond ]
+0.4
+[ angle_hbond ]
+30
+[ water_idx ]
+58954    177765
+[ outfile ]
+pr_old_hbond.dat
+pr_old_hbond_avg.dat
+[ avg_per_nframe ]
+100

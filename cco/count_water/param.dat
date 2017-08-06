@@ -1,0 +1,24 @@
+[ xtcfiles ]
+5
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_popc/MDRun/pr_popc_eq.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_popc/MDRun/pr_popc_12ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_popc/MDRun/pr_popc_25ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_popc/MDRun/pr_popc_37ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_popc/MDRun/pr_popc_50ns.xtc
+[ boxunit ]
+0.6      0.7       0.75
+[ prot_size ]
+5.4      4.2       6.75
+[ center_pos ]
+2.4      2.1       3.0
+[ water_idx ]
+56152    169128
+[ center_ref_atoms ]
+3
+17      131    4391
+[ outfile ]
+pr_wat.dat
+pr_watz.dat
+pr_matwat.dat
+[ skip_count ]
+100

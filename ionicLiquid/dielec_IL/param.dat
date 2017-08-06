@@ -1,0 +1,9 @@
+[ xtcfiles ]
+1
+bmimC1Hnopol_bf4nopol_pbc.xtc
+[ topfile ]
+param_bmimbf4.dat
+[ outfile ]
+dielect.dat
+[ temp ]
+300

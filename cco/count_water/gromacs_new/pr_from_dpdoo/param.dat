@@ -1,0 +1,28 @@
+[ xtcfiles ]
+9
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_eq.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_12ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_25ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_37ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_50ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_62ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_75ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_87ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs_new/pr_from_dpdoo/MDRun/pr_from_dpdoo_100ns.xtc
+[ boxunit ]
+0.6      0.7       0.75
+[ prot_size ]
+5.4      4.2       6.75
+[ center_pos ]
+2.4      2.1       3.0
+[ water_idx ]
+56152    169128
+[ center_ref_atoms ]
+3
+17      131    4391
+[ outfile ]
+pr_wat.dat
+pr_watz.dat
+pr_matwatz.dat
+[ skip_count ]
+100

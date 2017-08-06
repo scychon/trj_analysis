@@ -1,0 +1,26 @@
+[ xtcfiles ]
+5
+/oasis/scratch/comet/scychon/temp_project/CcO/gromacs_new/pm_popc/from_ppdoo_solvate/MDRun/pmp_from_ppdoo_eq.xtc
+/oasis/scratch/comet/scychon/temp_project/CcO/gromacs_new/pm_popc/from_ppdoo_solvate/MDRun/pmp_from_ppdoo_12ns.xtc
+/oasis/scratch/comet/scychon/temp_project/CcO/gromacs_new/pm_popc/from_ppdoo_solvate/MDRun/pmp_from_ppdoo_25ns.xtc
+/oasis/scratch/comet/scychon/temp_project/CcO/gromacs_new/pm_popc/from_ppdoo_solvate/MDRun/pmp_from_ppdoo_37ns.xtc
+/oasis/scratch/comet/scychon/temp_project/CcO/gromacs_new/pm_popc/from_ppdoo_solvate/MDRun/pmp_from_ppdoo_50ns.xtc
+[ GLU286 ]
+4398 4399 4400
+[ PRD ]
+114 115 -1
+[ BNC ]
+8795 8796 8797 -1
+[ dcut ]
+1.5
+[ dhbond ]
+0.4
+[ angle_hbond ]
+30
+[ water_idx ]
+56152    169158
+[ outfile ]
+pm_ppdoo_solvate_hbond.dat
+pm_ppdoo_solvate_hbond_avg.dat
+[ avg_per_nframe ]
+100

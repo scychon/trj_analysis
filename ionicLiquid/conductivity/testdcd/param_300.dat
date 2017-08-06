@@ -1,0 +1,15 @@
+[ trajfiles ]
+1
+md_nvt_100.dcd
+[ topfile ]
+topol.dat
+[ msdfile ]
+msd_300.dat
+[ conductivity output file ]
+sigma_300.dat
+[ rotational ACF file ]
+rotacf_300.dat
+[ rotational ACF P2 file ]
+rotacfp2_300.dat
+[ temp ]
+300

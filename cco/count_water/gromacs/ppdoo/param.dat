@@ -1,0 +1,24 @@
+[ xtcfiles ]
+5
+/oasis/scratch/scychon/temp_project/CcO/gromacs/ppdoo_popc/MDRun/NPT/ppdoo_popc_7ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs/ppdoo_popc/MDRun/NPT/ppdoo_popc_14ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs/ppdoo_popc/MDRun/NPT/ppdoo_popc_26ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs/ppdoo_popc/MDRun/NPT/ppdoo_popc_38ns.xtc
+/oasis/scratch/scychon/temp_project/CcO/gromacs/ppdoo_popc/MDRun/NPT/ppdoo_popc_50ns.xtc
+[ boxunit ]
+0.6      0.7       0.75
+[ prot_size ]
+5.4      4.2       6.75
+[ center_pos ]
+2.4      2.1       3.0
+[ water_idx ]
+58955    177766
+[ center_ref_atoms ]
+3
+17      132    4392
+[ outfile ]
+ppdoo_wat.dat
+ppdoo_watz.dat
+ppdoo_matwat.dat
+[ skip_count ]
+100

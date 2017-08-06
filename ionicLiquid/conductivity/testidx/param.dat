@@ -1,0 +1,15 @@
+[ xtcfiles ]
+1
+bmimC1Hnopol_bf4nopol_nojump.xtc
+[ topfile ]
+param_bmimbf4.dat
+[ msdfile ]
+msd.dat
+[ conductivity output file ]
+conductivity.dat
+[ rotational ACF file ]
+rotacf.dat
+[ rotational ACF P2 file ]
+rotacfp2.dat
+[ temp ]
+400

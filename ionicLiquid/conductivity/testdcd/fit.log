@@ -1,0 +1,440 @@
+
+
+*******************************************************************************
+Sun Mar 19 22:37:18 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 10000.0]
+        #datapoints = 100
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f1(x)
+fitted parameters initialized with current variable values
+
+
+
+ Iteration 0
+ WSSR        : 2.74588           delta(WSSR)/WSSR   : 0
+ delta(WSSR) : 0                 limit for stopping : 1e-05
+ lambda	  : 3.54012e-43
+
+initial set of free parameter values
+
+b1              = 1
+BREAK:          Undefined value during function evaluation
+
+
+
+*******************************************************************************
+Sun Mar 19 22:37:49 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 10000.0]
+        #datapoints = 100
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f1(x)
+fitted parameters initialized with current variable values
+
+BREAK:          Undefined value during function evaluation
+
+
+
+*******************************************************************************
+Sun Mar 19 22:38:25 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 1500.00]
+        #datapoints = 16
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f1(x)
+fitted parameters initialized with current variable values
+
+BREAK:          Undefined value during function evaluation
+
+
+
+*******************************************************************************
+Sun Mar 19 22:38:45 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 1500.00]
+        #datapoints = 16
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f1(x)
+fitted parameters initialized with current variable values
+
+BREAK:          Undefined value during function evaluation
+
+
+
+*******************************************************************************
+Sun Mar 19 22:38:53 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 1500.00]
+        #datapoints = 16
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f1(x)
+fitted parameters initialized with current variable values
+
+
+
+ Iteration 0
+ WSSR        : 2.59298           delta(WSSR)/WSSR   : 0
+ delta(WSSR) : 0                 limit for stopping : 1e-05
+ lambda	  : 8.8503e-43
+
+initial set of free parameter values
+
+a               = 1
+BREAK:          Undefined value during function evaluation
+
+
+
+*******************************************************************************
+Sun Mar 19 22:39:58 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+        #datapoints = 615
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f(x)
+fitted parameters initialized with current variable values
+
+
+
+ Iteration 0
+ WSSR        : 3.05212           delta(WSSR)/WSSR   : 0
+ delta(WSSR) : 0                 limit for stopping : 1e-05
+ lambda	  : 1.42751e-43
+
+initial set of free parameter values
+
+a               = 1
+BREAK:          Undefined value during function evaluation
+
+
+
+*******************************************************************************
+Sun Mar 19 22:40:07 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+        #datapoints = 615
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f(x)
+fitted parameters initialized with current variable values
+
+
+
+ Iteration 0
+ WSSR        : 0.557128          delta(WSSR)/WSSR   : 0
+ delta(WSSR) : 0                 limit for stopping : 1e-05
+ lambda	  : 63.7097
+
+initial set of free parameter values
+
+a               = 0.001
+
+After 5 iterations the fit converged.
+final sum of squares of residuals : 0.388624
+rel. change during last iteration : -1.40245e-07
+
+degrees of freedom    (FIT_NDF)                        : 614
+rms of residuals      (FIT_STDFIT) = sqrt(WSSR/ndf)    : 0.0251582
+variance of residuals (reduced chisquare) = WSSR/ndf   : 0.000632938
+
+Final set of parameters            Asymptotic Standard Error
+=======================            ==========================
+
+a               = 0.00134779       +/- 2.492e-05    (1.849%)
+
+
+correlation matrix of the fit parameters:
+
+               a      
+a               1.000 
+
+
+*******************************************************************************
+Sun Mar 19 22:40:59 2017
+
+
+FIT:    data read from 'rotacfp2_300.dat' u 1:2
+	x range restricted to [0.00000 : 10000.0]
+        #datapoints = 100
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f2(x)
+fitted parameters initialized with current variable values
+
+
+
+ Iteration 0
+ WSSR        : 1.20512           delta(WSSR)/WSSR   : 0
+ delta(WSSR) : 0                 limit for stopping : 1e-05
+ lambda	  : 157.995
+
+initial set of free parameter values
+
+a2              = 0.001
+
+After 8 iterations the fit converged.
+final sum of squares of residuals : 0.143121
+rel. change during last iteration : -6.07936e-07
+
+degrees of freedom    (FIT_NDF)                        : 99
+rms of residuals      (FIT_STDFIT) = sqrt(WSSR/ndf)    : 0.0380219
+variance of residuals (reduced chisquare) = WSSR/ndf   : 0.00144567
+
+Final set of parameters            Asymptotic Standard Error
+=======================            ==========================
+
+a2              = 0.00255061       +/- 9.804e-05    (3.844%)
+
+
+correlation matrix of the fit parameters:
+
+               a2     
+a2              1.000 
+
+
+*******************************************************************************
+Sun Mar 19 22:42:28 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 10000.0]
+        #datapoints = 100
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f(x)
+fitted parameters initialized with current variable values
+
+
+
+ Iteration 0
+ WSSR        : 0.2509            delta(WSSR)/WSSR   : 0
+ delta(WSSR) : 0                 limit for stopping : 1e-05
+ lambda	  : 0.0645011
+
+initial set of free parameter values
+
+c1              = 0.5
+a1              = 1
+a2              = 1
+BREAK:          Undefined value during function evaluation
+
+
+
+*******************************************************************************
+Sun Mar 19 22:42:35 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 10000.0]
+        #datapoints = 100
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f(x)
+fitted parameters initialized with current variable values
+
+BREAK:          Undefined value during function evaluation
+
+
+
+*******************************************************************************
+Sun Mar 19 22:42:51 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 10000.0]
+        #datapoints = 100
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f(x)
+fitted parameters initialized with current variable values
+
+BREAK:          Undefined value during function evaluation
+
+
+
+*******************************************************************************
+Sun Mar 19 22:42:57 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 10000.0]
+        #datapoints = 100
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f(x)
+fitted parameters initialized with current variable values
+
+BREAK:          Undefined value during function evaluation
+
+
+
+*******************************************************************************
+Sun Mar 19 22:44:08 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 10000.0]
+        #datapoints = 100
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f(x)
+fitted parameters initialized with current variable values
+
+
+
+ Iteration 0
+ WSSR        : 0.0845137         delta(WSSR)/WSSR   : 0
+ delta(WSSR) : 0                 limit for stopping : 1e-05
+ lambda	  : 0
+
+initial set of free parameter values
+
+c1              = 0.5
+a1              = 1.3
+a2              = 1.3
+BREAK:          Singular matrix in Givens()
+
+
+
+*******************************************************************************
+Sun Mar 19 22:44:20 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 10000.0]
+        #datapoints = 100
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f(x)
+fitted parameters initialized with current variable values
+
+
+
+ Iteration 0
+ WSSR        : 0.0845137         delta(WSSR)/WSSR   : 0
+ delta(WSSR) : 0                 limit for stopping : 1e-05
+ lambda	  : 0
+
+initial set of free parameter values
+
+c1              = 0.5
+a1              = 1.3
+a2              = 1
+BREAK:          Singular matrix in Givens()
+
+
+
+*******************************************************************************
+Sun Mar 19 22:44:41 2017
+
+
+FIT:    data read from 'rotacf_300.dat' u 1:2
+	x range restricted to [0.00000 : 10000.0]
+        #datapoints = 100
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f(x)
+fitted parameters initialized with current variable values
+
+
+
+ Iteration 0
+ WSSR        : 0.129777          delta(WSSR)/WSSR   : 0
+ delta(WSSR) : 0                 limit for stopping : 1e-05
+ lambda	  : 0.0593162
+
+initial set of free parameter values
+
+c1              = 0.5
+a1              = 1.3
+a2              = 1.001
+
+After 35 iterations the fit converged.
+final sum of squares of residuals : 0.019779
+rel. change during last iteration : -4.42251e-06
+
+degrees of freedom    (FIT_NDF)                        : 97
+rms of residuals      (FIT_STDFIT) = sqrt(WSSR/ndf)    : 0.0142796
+variance of residuals (reduced chisquare) = WSSR/ndf   : 0.000203907
+
+Final set of parameters            Asymptotic Standard Error
+=======================            ==========================
+
+c1              = 0.235867         +/- 0.0176       (7.46%)
+a1              = 11.7975          +/- 2.425        (20.55%)
+a2              = 1.01884          +/- 0.02409      (2.365%)
+
+
+correlation matrix of the fit parameters:
+
+               c1     a1     a2     
+c1              1.000 
+a1             -0.734  1.000 
+a2             -0.859  0.574  1.000 
+
+
+*******************************************************************************
+Sun Mar 19 22:45:50 2017
+
+
+FIT:    data read from 'rotacfp2_300.dat' u 1:2
+	x range restricted to [0.00000 : 10000.0]
+        #datapoints = 100
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f2(x)
+fitted parameters initialized with current variable values
+
+
+
+ Iteration 0
+ WSSR        : 0.38694           delta(WSSR)/WSSR   : 0
+ delta(WSSR) : 0                 limit for stopping : 1e-05
+ lambda	  : 0.130876
+
+initial set of free parameter values
+
+b2              = 1.01884
+c2              = 0.235867
+b1              = 11.7975
+
+After 6 iterations the fit converged.
+final sum of squares of residuals : 0.00911409
+rel. change during last iteration : -6.38471e-08
+
+degrees of freedom    (FIT_NDF)                        : 97
+rms of residuals      (FIT_STDFIT) = sqrt(WSSR/ndf)    : 0.00969328
+variance of residuals (reduced chisquare) = WSSR/ndf   : 9.39597e-05
+
+Final set of parameters            Asymptotic Standard Error
+=======================            ==========================
+
+b2              = 1.30034          +/- 0.03128      (2.406%)
+c2              = 0.444943         +/- 0.01257      (2.824%)
+b1              = 18.2674          +/- 1.854        (10.15%)
+
+
+correlation matrix of the fit parameters:
+
+               b2     c2     b1     
+b2              1.000 
+c2             -0.849  1.000 
+b1              0.553 -0.713  1.000 

@@ -1,0 +1,24 @@
+[ xtcfiles ]
+3
+/oasis/scratch/comet/scychon/temp_project/CcO/gromacs_new/dpdoo_from_pr_solvate/MDRun/dpdoo_from_pr_solvate_eq.xtc
+/oasis/scratch/comet/scychon/temp_project/CcO/gromacs_new/dpdoo_from_pr_solvate/MDRun/dpdoo_from_pr_solvate_12ns.xtc
+/oasis/scratch/comet/scychon/temp_project/CcO/gromacs_new/dpdoo_from_pr_solvate/MDRun/dpdoo_from_pr_solvate_25ns.xtc
+[ GLU286 ]
+4398 4399 -1
+[ PRD ]
+114 115 116
+[ BNC ]
+8795 8796 8797 -1
+[ dcut ]
+1.5
+[ dhbond ]
+0.4
+[ angle_hbond ]
+30
+[ water_idx ]
+56152    169158
+[ outfile ]
+dpdoo_from_pr_hbond.dat
+dpdoo_from_pr_hbond_avg.dat
+[ avg_per_nframe ]
+100
