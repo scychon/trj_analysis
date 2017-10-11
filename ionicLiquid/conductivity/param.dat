@@ -13,3 +13,5 @@ rotacf.dat
 rotacfp2.dat
 [ temp ]
 400
+[ msd_axis ]
+3.0 0 -2.0

@@ -18,7 +18,7 @@ contains
         integer :: isize
         
         isize = size(array(:))
-        allocate(temp(isize))
+        allocate(temp(isize+nsize))
         temp=0
         temp(:isize)=array
         deallocate(array)

@@ -82,6 +82,7 @@ contains
     ! subroutine to read the parameter file
     subroutine readparam
         use variables
+        use fvector
         implicit none
         integer :: ifile
         character(len=256)         :: str, line
@@ -111,8 +112,11 @@ contains
         read(7, '(A)') strRotACFP2File
         read(7, '(A)') line
         read(7, *) temperature
+        read(7, '(A)') line
+        read(7, *) msd_vec
         close(7)
 
+        msd_vec = msd_vec/norm(msd_vec)
         if(strTopFile .eq. "") then
           write(*,*) 'topology file is not set in your parameter file', strInFile
           write(*,*) 'will use default topfile name conparam_bmimbf4.dat'

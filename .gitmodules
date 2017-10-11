@@ -1,0 +1,3 @@
+[submodule "structure_factor"]
+	path = structure_factor
+	url = https://github.com/scychon/structure_factor.git

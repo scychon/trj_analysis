@@ -30,6 +30,7 @@ program calc_xqCF_rotACF
   integer            :: nframe
   integer            :: nsysatoms, nmolcurr
   integer            :: idframe,ndframe,idt
+  integer            :: numthread,threadid
   integer,dimension(3)   :: idxs
   integer time_array_0(8), time_array_1(8)
   real start_time, finish_time
@@ -51,6 +52,7 @@ program calc_xqCF_rotACF
   real*8, allocatable,dimension(:,:) :: comMolt1,comMolt2,comMolDiff   ! array for com of each molecules at specific time (mol idx, xyz)
   real*8, allocatable,dimension(:,:) :: boxtraj,tempbox      !matrix for # of water molecules along z direction
   real*8, allocatable,dimension(:,:) :: mutrajrot, mutrajtrans      !matrix for murot,mutran
+  real*8, allocatable,dimension(:,:) :: xposframe   !matrix for positions in the frame
   real*8, allocatable,dimension(:) :: temptime     !matrix for timestamps
   real*8, allocatable,dimension(:) :: Sc     !matrix for q*xyz for each timestep
   real*8, allocatable,dimension(:) :: molTypeIdxs     ! array for molecule type idx of each moleclue ( molecule idx )
@@ -61,6 +63,7 @@ program calc_xqCF_rotACF
 
   ! array of count of frame pairs having time difference dt
   integer,allocatable,dimension(:)   :: nDiffTime   !  (time difference dt in unit of time step)
+  integer,allocatable,dimension(:,:)   :: nDiffTimeThread   !  (time difference dt in unit of time step)
   ! array of dt in unit of dt0
   integer,allocatable,dimension(:,:)   :: idtmat   !  (ixtc, jxtc)
 
@@ -69,15 +72,18 @@ program calc_xqCF_rotACF
   real*8, allocatable,dimension(:,:,:) :: xqcomTraj     ! matrix for q*xyz_com of each molecule at each timestep (frame idx, mol idx, q*xyz)
   real*8, allocatable,dimension(:,:,:) :: xqAtomsTraj     ! matrix for q*xyz of each atom at each timestep (frame idx, atom idx, q*xyz)
   real*8, allocatable,dimension(:) :: xqAtomsCFTime     ! matrix for conduct correlation function of each atom at each dt (time difference dt in unit of time step, atom idx)
+  real*8, allocatable,dimension(:,:) :: xqAtomsCFTimeThread     ! matrix for conduct correlation function of each atom at each dt (time difference dt in unit of time step, atom idx)
   real*8, allocatable,dimension(:) :: xqcomCFTime     ! matrix for conduct correlation function of each molecule at each dt (time difference dt in unit of time step, mol idx, q*xyz)
+  real*8, allocatable,dimension(:,:) :: xqcomCFTimeThread     ! matrix for conduct correlation function of each molecule at each dt (time difference dt in unit of time step, mol idx, q*xyz)
   real*8, allocatable,dimension(:,:) :: xqcomDiff     ! matrix for difference of xq_xyz of each molecules at each time step combination (ixtc,jxtc,idxmol,3)
   real*8,dimension(3)    :: xqdiff1,xqdiff2
 
 
   ! for MSD calculation
-  real*8                    :: msd
+  real*8                    :: msd, msd_axis
   real*8,dimension(3)       :: xdiff
   real*8, allocatable,dimension(:,:,:)  :: msdTime      ! translational mean square displacement of each molecule types at each time difference (time difference dt in unit of time step, x;y;z;tot, moltype idx i)
+  real*8, allocatable,dimension(:,:,:,:)  :: msdTimeThread      ! translational mean square displacement of each molecule types at each time difference (time difference dt in unit of time step, x;y;z;tot, moltype idx i)
 
   ! for rotational ACF
   ! matrices for unit normal vector of molecules
@@ -88,6 +94,7 @@ program calc_xqCF_rotACF
   real*8, allocatable,dimension(:,:) :: unitNormMolt1, unitNormMolt2     ! unit normal vector of each molecules at each timestep (frame idx, mol idx, vec_xyz)
   !real*8, allocatable,dimension(:,:,:) :: rotacf     ! rotational ACF <ui(t2).ui(t1)> of each molecules at each time step combination (ixtc, jxtc, idxmol)
   real*8, allocatable,dimension(:,:) :: rotACFTime,rotACFTimeP2     ! rotational ACF <ui(t2).ui(t1)> of each molecule types at each time difference (time difference dt in unit of time step, moltype idx i )
+  real*8, allocatable,dimension(:,:,:) :: rotACFTimeThread,rotACFTimeP2Thread     ! rotational ACF <ui(t2).ui(t1)> of each molecule types at each time difference (time difference dt in unit of time step, moltype idx i )
   real*8, allocatable,dimension(:) :: rotACFt0     ! rotational ACF <ui(t2).ui(t1)> of each molecule types at each time difference (time difference dt in unit of time step, moltype idx i )
 
   character(len=30)          :: strfmt, strfmtmsd
@@ -104,6 +111,12 @@ program calc_xqCF_rotACF
   nsysatoms = 0
   volavg = 0
   volume = 0
+
+  write(*,*) 'get omp num threads'
+  !$OMP PARALLEL
+  numthread = omp_get_num_threads()
+  !$OMP END PARALLEL
+  write(6,*) 'Using ',numthread,' number of threads'
 
   debye = 3.33564E-30
   eps0 = 8.85418781762E-12
@@ -158,6 +171,7 @@ program calc_xqCF_rotACF
         molTypeIdxs(idxmol) = i
       enddo
     enddo
+    allocate(xposframe(3,nsysatoms))
 
     ! initialize all matrices for first trajectory 
     allocate(comMolt1(nmolsys,3))
@@ -235,23 +249,30 @@ program calc_xqCF_rotACF
 
 
         do k=1,3
-          boxtraj(ixtc,k) = trajin % box(k,k)
+          sysbox(k) = trajin % box(k,k)
+          boxtraj(ixtc,k) = sysbox(k)
         enddo
 
+        ! Compute and store the trajectory of the center of mass postion,
+        ! the rotational principle vector, and the dipole moment vector
         idxatom = 0
         idxmol = 0
+        xposframe = trajin % pos
         do i=1, sys % nummoltype
+          !$OMP PARALLEL &
+          !$OMP   DEFAULT (FIRSTPRIVATE) &
+          !$OMP   SHARED (unitNormMolTraj, comtraj, mutraj)
+          !$OMP DO
           do j=1, sys % moltype(i) % nummol
-            idxmol = idxmol + 1
             compos = 0
             mutot = 0
             idxs = sys % moltype(i) % molPlaneAtomIdxs
 
             do k=1, sys % moltype(i) % numatom
-              idxatom = idxatom +1
+              idx = idxatom + (j-1) * sys % moltype(i) % numatom + k
               mass = sys % moltype(i) % atommass(k)
               charge = sys % moltype(i) % atomcharge(k)
-              xpos(:) = trajin % pos(:,idxatom)
+              xpos(:) = xposframe(:,idx)
               compos(:) = compos(:) + xpos(:)*mass
             !  xqAtomsTraj(ixtc,idxatom,:) = xpos(:)*charge
               mutot(:) = mutot(:) + xpos(:)*charge
@@ -263,14 +284,18 @@ program calc_xqCF_rotACF
                   xPlaneAtom(3,:) = xpos(:)
               end if
             enddo
-            unitNormMolTraj(ixtc,idxmol,:) = vecUnitNorm( xPlaneAtom(1,:)-xPlaneAtom(2,:), xPlaneAtom(1,:)-xPlaneAtom(3,:) )
+            unitNormMolTraj(ixtc,idxmol+j,:) = vecUnitNorm( xPlaneAtom(1,:)-xPlaneAtom(2,:), xPlaneAtom(1,:)-xPlaneAtom(3,:) )
 
             molmass = sys % moltype(i) % molarmass
             compos(:) = compos(:)/molmass
-            comtraj(ixtc,idxmol,:) = compos(:)
-            mutraj(ixtc,idxmol,:) = mutot(:)
-!            write(*,*) comtraj(ixtc,idxmol,:)
+            comtraj(ixtc,idxmol+j,:) = compos(:)
+            mutraj(ixtc,idxmol+j,:) = mutot(:)
+!            write(*,*) comtraj(ixtc,idxmol+j,:)
           enddo
+          !$OMP END DO
+          !$OMP END PARALLEL
+          idxmol = idxmol + sys % moltype(i) % nummol
+          idxatom = idxatom + sys % moltype(i) % nummol * sys % moltype(i) % numatom
         enddo 
 
         ! unwrap the trajectory
@@ -283,9 +308,9 @@ program calc_xqCF_rotACF
           !$OMP DO
           do i=1, nmolsys
             comMolDiff(i,:) = comtraj(ixtc,i,:) - comtraj(ixtc-1,i,:)
-            comMolDiff(i,1) = comMolDiff(i,1) - NINT(comMolDiff(i,1)/boxtraj(ixtc,1))*boxtraj(ixtc,1)
-            comMolDiff(i,2) = comMolDiff(i,2) - NINT(comMolDiff(i,2)/boxtraj(ixtc,2))*boxtraj(ixtc,2)
-            comMolDiff(i,3) = comMolDiff(i,3) - NINT(comMolDiff(i,3)/boxtraj(ixtc,3))*boxtraj(ixtc,3)
+            comMolDiff(i,1) = comMolDiff(i,1) - NINT(comMolDiff(i,1)/sysbox(1))*sysbox(1)
+            comMolDiff(i,2) = comMolDiff(i,2) - NINT(comMolDiff(i,2)/sysbox(2))*sysbox(2)
+            comMolDiff(i,3) = comMolDiff(i,3) - NINT(comMolDiff(i,3)/sysbox(3))*sysbox(3)
             comUnwrapTraj(ixtc,i,:) = comUnwrapTraj(ixtc-1,i,:)+comMolDiff(i,:)
           enddo
           !$OMP END DO
@@ -300,7 +325,7 @@ program calc_xqCF_rotACF
         endif
 
         write(6,100) ixtc,'th frame has finished  ' 
- 100    FORMAT('+', I5,A)  
+ 100    FORMAT('+', I8,A)  
 
         call trajin % read
  
@@ -341,7 +366,10 @@ program calc_xqCF_rotACF
     dt = timestamp(nxtc)-timestamp(1)
     ndframe = int(dt/dt0 + 0.00001)
 
-    write(6,*) 'ndframe is set' 
+    write(6,*) 'dt is ', dt
+    write(6,*) 'dt0 is ', dt0
+
+    write(6,*) 'ndframe is set' , ndframe
     ! generate and initialize time difference matrices
 !    allocate(idtmat(nxtc-1,nxtc))
     write(6,*) 'idtmat allocated' 
@@ -354,7 +382,7 @@ program calc_xqCF_rotACF
     write(6,*) 'xqcomCFTime allocated' 
     allocate(xqcomDiff(nmolsys,3))
     write(6,*) 'xqcomDiff allocated' 
-    allocate(msdTime(ndframe,4,nmoltype+1))
+    allocate(msdTime(ndframe,5,nmoltype+1))
     write(6,*) 'msdTime allocated' 
     allocate(rotACFTime(ndframe,nmoltype+1))
     write(6,*) 'rotACFTime allocated' 
@@ -405,20 +433,32 @@ program calc_xqCF_rotACF
     call date_and_time(values=time_array_0)
     write(6,*) 'Start time : ', time_array_0
     do i=1,nxtc-1
+      if ((i .gt. 100) .and. (mod(i,100) .ne. 0)) then
+        cycle
+      endif
       t1 = timestamp(i)
       unitNormMolt1(:,:) = unitNormMolTraj(i,:,:)
+!      write(6,*) 'unitNormMol set'
+!      write(6,*) 'test line'
       !$OMP PARALLEL &
-      !$OMP   DEFAULT (FIRSTPRIVATE) &
-      !$OMP   SHARED (nDiffTime, rotACFTime, rotACFTimeP2,msdTime, &
-      !$OMP          xqcomCFTime, unitNormMolTraj,comtraj,comUnwrapTraj,xqcomTraj)
+      !$OMP PRIVATE(t2,dt,idt,comMolDiff,unitNormMolt2,idxmol,xqcomDiff, &
+      !$OMP         xqdiff1,k,idxmoltype,nmolcurr,xdiff,msd,msd_axis,rotacf)
       !$OMP DO
       do j=i+1,nxtc
         t2 = timestamp(j)
         dt = t2 - t1
-        idt = int(dt/dt0 + 0.00001)
+        idt = int((dt+0.00001)/dt0 + 0.0001)
         if(idt .le. 0) then
-          write(6,*) 'idt is less than 0', idt, t1, t2, dt
+          write(6,*) 'idt is less than 0', idt, t1, t2, dt, dt0
+          write(6,*) 'error might occur'
+          write(6,*) 'dt/dt0', dt/dt0
+          write(6,*) 'error might occur'
+          write(6,*) 'error might occur'
           continue
+        elseif((idt .gt. 100) .and. (mod(idt,10) .ne. 0) ) then
+          cycle
+        elseif((idt .gt. 1000) .and. (mod(idt,100) .ne. 0) ) then
+          cycle
         endif
         !comMolDiff(:,:) = comtraj(i,:,:)- comtraj(j,:,:)
         comMolDiff(:,:) = comUnwrapTraj(i,:,:)- comUnwrapTraj(j,:,:)
@@ -435,11 +475,15 @@ program calc_xqCF_rotACF
           nmolcurr = nmolMolType(idxmoltype)
           xdiff(:) = comMolDiff(k,:)
           msd = dot_product(xdiff, xdiff)
+          msd_axis = dot_product(xdiff, msd_vec)
+          msd_axis = msd_axis**2
           xdiff = vecSquare(xdiff)
           msdTime(idt,1:3,idxmoltype) = msdTime(idt,1:3,idxmoltype) + xdiff(:)/nmolcurr
           msdTime(idt,1:3,nmoltype+1) = msdTime(idt,1:3,nmoltype+1) + xdiff(:)/nmolsys
-          msdTime(idt,4,idxmoltype) = msdTime(idt,4,idxmoltype) + msd/nmolcurr
-          msdTime(idt,4,nmoltype+1) = msdTime(idt,4,nmoltype+1) + msd/nmolsys
+          msdTime(idt,4,idxmoltype)   = msdTime(idt,4,idxmoltype) + msd_axis/nmolcurr
+          msdTime(idt,4,nmoltype+1)   = msdTime(idt,4,nmoltype+1) + msd_axis/nmolsys
+          msdTime(idt,5,idxmoltype)   = msdTime(idt,5,idxmoltype) + msd/nmolcurr
+          msdTime(idt,5,nmoltype+1)   = msdTime(idt,5,nmoltype+1) + msd/nmolsys
           
           rotacf = dot_product(unitNormMolt1(k,:),unitNormMolt2(k,:))
           rotACFTime(idt,idxmoltype) = rotACFTime(idt,idxmoltype) + rotacf/nmolcurr
@@ -463,7 +507,7 @@ program calc_xqCF_rotACF
       !$OMP END PARALLEL
       write(6,100) i,'th frame has finished  ' 
     enddo
-
+    
     call date_and_time(values=time_array_1)
     write(6,*) 'End time : ', time_array_1
 
@@ -505,17 +549,20 @@ program calc_xqCF_rotACF
 
     write(18,'(A5,3E15.7)') 'tot  ',rotsq,transsq,rottrans
     write(strfmt,'("( F12.3, ",I0,"ES15.7 )")') nmoltype+1
-    write(strfmtmsd,'("( F12.3, ",I0,"ES15.7 )")') 4*(nmoltype+1)
+    write(strfmtmsd,'("( F12.3, ",I0,"ES15.7 )")') 5*(nmoltype+1)
     ! write (0,1) for auto correlation functions
     write(20,strfmt) 0,rotACFt0
     write(21,strfmt) 0,rotACFt0
     do idt=1,ndframe
      ! icnt = nACFTime(idt)
       icnt = nDiffTime(idt)
+      if(icnt .eq. 0) then
+        continue
+      endif
 !      if(xqAtomsCFTime(idt) .ne. 0) then
 !        write(18,'(2E15.7)') dt0*idt,xqAtomsCFTime(idt)/icnt
 !      endif
-      if(msdTime(idt,4,nmoltype+1) .ne. 0) then
+      if(msdTime(idt,5,nmoltype+1) .ne. 0) then
         write(18,strfmtmsd) dt0*idt,msdTime(idt,:,:)/icnt
       endif
       if(xqcomCFTime(idt) .ne. 0) then

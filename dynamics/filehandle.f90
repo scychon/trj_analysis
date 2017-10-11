@@ -26,18 +26,46 @@ contains
         strInFile = ""
         strOutFile = ""
         narg=size(aStrArgs)
+        bMSDVec=.false.
+        bConduct=.false.
+        bMSD=.false.
+        bRotACF=.false.
+        bRotACFP2=.false.
+        bVelXtc=.false.
+        bSingleChain=.true.
+        bPolyStat=.false.
+        bTemp=.false.
+        bXtcFiles=.false.
+
         !loop across options
         do iarg=1,narg
           str = aStrArgs(iarg)
           select case(adjustl(str))
             case("--help","-h")
-               write(*,*)"This is program TestArg : Version 0.1"
+               write(*,*)"This is program polystat : Version 0.1"
+               write(*,*) 'Options : '
           
             !First known args
             case("-f")
                bLookForInp=.TRUE. !change logical value
             case("-o")
                bLookForOut=.TRUE.
+            case("-msd")
+               bMSD=.TRUE.
+            case("-rot")
+               bRotACF=.TRUE.
+            case("-poly")
+               bPolyStat=.TRUE.
+            case("-cond")
+               bConduct=.TRUE.
+            case("-vel")
+               bVelXtc=.TRUE.
+            case("-all")
+               bMSD=.TRUE.
+               bRotACF=.TRUE.
+               bPolyStat=.TRUE.
+               bConduct=.TRUE.
+               bVelXtc=.TRUE.
           
             case default
             !Treat the second arg of a serie
@@ -59,15 +87,15 @@ contains
 
         if(strInFile .eq. "") then
           write(*,*) 'input file has not set'
-          write(*,*) 'usage : conductivity -f param.dat -o outfile.dat'
+          write(*,*) 'usage : polyanal -f param.dat [options]'
           stop
         endif
         
         inquire(file=strInFile,exist=bFileExist)!check if it exist
         if(.not.bFileExist)then
-          write(*,*)'file ',strInFile,' not found'
-          write(*,*) 'usage : conductivity -f param.dat -o outfile.dat'
-          stop
+          call printerr('file ' // strInFile // ' not found')
+        elseif( (.not.bMSD) .and. (.not.bRotACF) .and. (.not.bConduct) .and. (.not.bVelXtc) .and. (.not.bPolyStat) ) then
+          call printerr('No analysis option is selected')
         endif
         
         if(strOutFile .eq. "") then
@@ -79,9 +107,21 @@ contains
 
     end subroutine getargs
 
+    ! subroutine to print error message
+    subroutine printerr(strError)
+        use variables
+        implicit none
+        character(len=*), intent(in)  :: strError
+        write(*,*) 'Error : ',strError
+        write(*,*) 'usage : polyanal -f param.dat [options]'
+        write(*,*) 'To see the available options, type polyanal -h'
+        stop
+    end subroutine printerr
+
     ! subroutine to read the parameter file
     subroutine readparam
         use variables
+        use fvector
         implicit none
         integer :: ifile,iline, ISTAT, idx
         character(len=256)         :: str, line, strhead
@@ -101,15 +141,17 @@ contains
             line = line(:idx-1)
           endif
           if (len(trim(line)) .eq. 0) then
-            continue   ! no info in the line
+            cycle   ! no info in the line
           endif
 
           if (line(:1) .eq. '[') then
             strhead = trim(adjustl(line(2:(index(line,']')-1))))
           else
-            write(*,*) 'Error in input file ',strInFile
-            write(*,*) iline, 'th line does not contain proper data !'
-            stop
+            write(*,*) 'Unkown parameter on ',iline, 'th line : '
+            write(*,*) line
+!            write(*,*) 'Error in input file ',strInFile
+!            write(*,*) iline, 'th line does not contain proper data !'
+!            stop
           endif
 
           select case (strhead)
@@ -117,14 +159,21 @@ contains
               read(7,*) nxtcfile
               write(*,*) nxtcfile
               allocate(strXtcfiles(nxtcfile))
+              if (nxtcfile .ge. 0) then
+                bXtcFiles = .true.
+              endif
               do ifile=1,nxtcfile
                 read(7,'(A)') strXtcfiles(ifile)
                 write(*,*) trim(strXtcfiles(ifile))
               enddo
             case ("velfiles")
+              if (.not.bVelXtc) cycle
               read(7,*) nvelxtcfile
               write(*,*) nvelxtcfile
-              allocate(strVelXtcfiles(nxtcfile))
+              allocate(strVelXtcfiles(nvelxtcfile))
+              if (nvelxtcfile .ge. 0) then
+                bVelXtc = .true.
+              endif
               do ifile=1,nvelxtcfile
                 read(7,'(A)') strVelXtcfiles(ifile)
                 write(*,*) trim(strVelXtcfiles(ifile))
@@ -132,21 +181,37 @@ contains
             case ('topfile')
               read(7, '(A)') strTopFile
               write(*,*) strTopFile
+            case ('polyfile')
+              !if (.not.bPolyStat) cycle
+              read(7, '(A)') strPolyStatFile
+              write(*,*) strPolyStatFile
             case ('msdfile')
+              !if (.not.bMSD) cycle
               read(7, '(A)') strMSDFile
               write(*,*) strMSDFile
+            case ('msdvec')
+              !if (.not.bMSD) cycle
+              read(7, *) msd_vec
+              write(*,*) msd_vec
+              msd_vec = msd_vec/norm(msd_vec)
+              bMSDVec = .true.
             case ('conductivity output file')
+              !if (.not.bConduct) cycle
               read(7, '(A)') strConductFile
               write(*,*) strConductFile
             case ('rotational ACF file')
+              !if (.not.bRotACF) cycle
               read(7, '(A)') strRotACFFile
               write(*,*) strRotACFFile
             case ('rotational ACF P2 file')
+              !if (.not.bRotACF) cycle
               read(7, '(A)') strRotACFP2File
               write(*,*) strRotACFP2File
+              bRotACFP2 = .true.
             case ('temp')
               read(7, *) temperature
               write(*,*) temperature
+              bTemp = .true.
           end select
           read(7, '(A)',IOSTAT=ISTAT) line   ! search for header line
         enddo
@@ -154,8 +219,18 @@ contains
 
         if(strTopFile .eq. "") then
           write(*,*) 'topology file is not set in your parameter file', strInFile
-          write(*,*) 'will use default topfile name conparam_bmimbf4.dat'
-          strTopFile = 'param_bmimbf4.dat'
+          write(*,*) 'will use default topfile name topol.dat'
+          strTopFile = 'topol.dat'
+        endif
+
+        if (.not. bTemp) then
+          write(*,*) 'Temperature is not set in your parameter file', strInFile
+          write(*,*) 'For help, try polystat_omp -h'
+          stop
+        elseif (.not. bXtcFiles) then
+          write(*,*) 'Input trajectory files are not set in your parameter file', strInFile
+          write(*,*) 'For help, try polystat_omp -h'
+          stop
         endif
 
     end subroutine readparam

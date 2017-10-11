@@ -1,5 +1,5 @@
-cd /oasis/projects/nsf/wis119/scychon/program/gmx_xtc/
-#ifort -c xtc-interface-wrap.f90 -lxdrfile -L lib/
-#cp xtc.mod /oasis/projects/nsf/wis119/scychon/program/utility/trj_analysis/ionicLiquid/
-cd /oasis/projects/nsf/wis119/scychon/program/utility/trj_analysis/ionicLiquid/conductivity
-ifort /oasis/projects/nsf/wis119/scychon/program/gmx_xtc/xtc-interface-wrap.o variables.f90 topol.f90 fvector.f90 filehandle.f90 conductivity.f90 -o calc_cond -lxdrfile -L /oasis/projects/nsf/wis119/scychon/program/gmx_xtc/lib -CB
+export GMXXTC=$HOME/program/utility/trj_analysis/gmx_xtc
+export OPENMMDCD=$HOME/program/utility/trj_analysis/openmm_dcd
+
+#ifort -openmp $GMXXTC/xtc-interface-wrap.o variables.f90 topol.f90 fvector.f90 filehandle.f90 polyanal.f90 -o polyanal_omp -lxdrfile -L $GMXXTC/lib -I $GMXXTC -CB
+ifort $GMXXTC/xtc-interface-wrap.o $OPENMMDCD/dcdmod.o $OPENMMDCD/trajmod.o variables.f90 topol.f90 fvector.f90 filehandle.f90 polyanal.f90 -o polyanal -lxdrfile -L $GMXXTC/lib -I $GMXXTC -I $OPENMMDCD -CB
