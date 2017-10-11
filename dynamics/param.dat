@@ -1,8 +1,8 @@
 [ xtcfiles ]
 1
-bmimC1Hnopol_bf4nopol_pbc_20.xtc
+/srv/home/cson/work/polyelectrolyte/PAA//paa10/fval0/explicit/md_nvt.dcd
 [ topfile ]
-param_bmimbf4.dat
+topol.dat
 [ msdfile ]
 msd.dat
 [ conductivity output file ]
@@ -12,4 +12,18 @@ rotacf.dat
 [ rotational ACF P2 file ]
 rotacfp2.dat
 [ temp ]
-400
+300
+[ grfile ]
+'gr.dat'
+[ gr_skip ]
+100
+[ gr_bins ]
+1000
+[ Sqfile ]
+'sq.dat'
+[ AFF_file_ext ]
+out
+[ AFF_file_dir ]
+'../../../aff_data'
+[ polyfile ]
+polystat.dat

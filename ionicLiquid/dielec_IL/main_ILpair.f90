@@ -6,15 +6,17 @@
 program calc_dielect
  
     ! 1. Use the xdr interface
-    use xtc, only: xtcfile
+    use traj, only: trajfile
     use topol, only: topfile
     use variables
+    use fvector
     use calc_corr
+    use omp_lib
  
     implicit none
 
     ! 2. Declare a variable of type xtcfile
-    type(xtcfile) :: traj
+    type(trajfile) :: trajin
     type(topfile) :: sys
 
 !  --------------------------------------------------------------------------
@@ -24,6 +26,7 @@ program calc_dielect
   integer            :: isize,ifile                  !counters
   integer            :: narg, cptArg, nxtcfile       !#of arg & counter of arg
   integer            :: nframe
+  integer            :: numthread,threadid
 
 
   logical::lookForInp=.FALSE.
@@ -31,18 +34,20 @@ program calc_dielect
   logical::fileExist
 
   real*8             :: delr=0.02d0,rmax=3.0d0,boxsize=0.3d0      !
-  real*8             :: mass, molmass, dr, rclustcat, rclustani,charge,molcharge
+  real*8             :: mass, molmass, dr, charge,molcharge
   real*8             :: murotsq, mutranssq, murottrans, volume,temperature
   real*8             :: rotsq,transsq,rottrans,rotval,transval
   real*8             :: debye, eps0, kb, enm, multiple, qelec,mult2
-  real*8             :: volavg, muavg
+  real*8             :: volavg, muavgsum
   real*8,dimension(3)    :: xpos,sysbox,compos,dist,box,mutot
   real*8,dimension(3)    :: murot, mutrans
   real*8,dimension(300)  :: rbin
-  real*8, allocatable,dimension(:,:,:) :: comtraj,comtrajcat,comtrajani,mutraj,mutrajcat,mutrajani,temp   ! trajectory of com of each molecules (frame idx, mol idx, xyz)
+  real*8, allocatable,dimension(:,:,:) :: comtraj,mutraj,temp   ! trajectory of com of each molecules (frame idx, mol idx, xyz)
   real*8, allocatable,dimension(:,:) :: boxtraj,tempbox      !matrix for # of water molecules along z direction
-  real*8, allocatable,dimension(:,:) :: mutrajrot, mutrajtrans      !matrix for murot,mutran
+  real*8, allocatable,dimension(:,:,:) :: mutrajrot, mutrajtrans      !matrix for murot,mutran
+  real*8, allocatable,dimension(:,:) :: mutrajrotsum, mutrajtranssum      !matrix for murot,mutran
   real*8, allocatable,dimension(:) :: temptime     !matrix for # of water molecules along z direction
+  real*8, allocatable,dimension(:) :: muavg     !matrix for # of water molecules along z direction
   character(len=256)         :: strout,strtitle
   character(len=256)         :: strInFile, strOutFile, strTopFile
   character(len=256)         :: strDielecFile, strIPFile, strCPFile
@@ -68,9 +73,12 @@ program calc_dielect
   mult2 = qelec**2 * 1e-18/(eps0*kb)
 
   write(*,*) multiple, mult2
+  write(*,*) 'get omp num threads'
+  !$OMP PARALLEL
+  numthread = omp_get_num_threads()
+  !$OMP END PARALLEL
+  write(6,*) 'Using ',numthread,' number of threads'
 
-  rclustcat = 0.73d0
-  rclustani = 0.73d0
 ! Initialization
   strInFile = ""
   strOutFile = ""
@@ -157,19 +165,17 @@ endif
 
 
 
-    ! 3. Initialize it with the name of traj file you want to read in.
+    ! 3. Initialize it with the name of trajin file you want to read in.
     ixtc=0
     do ifile=1,nxtcfile
     strInFile = trim(strXtcfiles(ifile))
     write(*,'(A,A)') 'reading trajectory file ',trim(strInFile)
     write(*,*) ''
-    call traj % init(strInFile)
+    call trajin % init(strInFile)
 
     nmolsys = sys % numsysmol
     allocate(comtraj(nsize,nmolsys,3))
     allocate(mutraj(nsize,nmolsys,3))
-    nmolcat = sys % moltype(1) % nummol
-    nmolani = sys % moltype(2) % nummol
 
     allocate(timestamp(nsize))
     allocate(boxtraj(nsize,3))
@@ -182,67 +188,41 @@ endif
     !    another array, or 
     !    do your calculations after each read.
  
-    call traj % read
+    call trajin % read
 
     OPEN (UNIT=6,FORM='FORMATTED',CARRIAGECONTROL='FORTRAN')
         ! Just an example to show what was read in
-        write(6,'(a,f12.6,a,i0)') " Time (ps): ", traj % time, "  Step: ", traj % STEP
-        write(6,'(a,f12.6,a,i0)') " Precision: ", traj % prec, "  No. Atoms: ", traj % NATOMS
+        write(6,'(a,f12.6,a,i0)') " Time (ps): ", trajin % time, "  Step: ", trajin % STEP
+        write(6,'(a,f12.6,a,i0)') " Precision: ", trajin % prec, "  No. Atoms: ", trajin % NATOMS
         ! This is the same order as found in the GRO format fyi
-        write(6,'(9f9.5)')  traj % box(1,1), traj % box(2,2), traj % box(3,3), &
-                            traj % box(1,2), traj % box(1,3), & 
-                            traj % box(2,1), traj % box(2,3), &
-                            traj % box(3,1), traj % box(3,2)
+        write(6,'(9f9.5)')  trajin % box(1,1), trajin % box(2,2), trajin % box(3,3), &
+                            trajin % box(1,2), trajin % box(1,3), & 
+                            trajin % box(2,1), trajin % box(2,3), &
+                            trajin % box(3,1), trajin % box(3,2)
         write(6,*) '' 
-    do while ( traj % STAT == 0 )
+    do while ( trajin % STAT == 0 )
         ixtc = ixtc + 1
-        volume = traj % box(1,1) * traj % box(2,2) * traj % box(3,3)
+        volume = trajin % box(1,1) * trajin % box(2,2) * trajin % box(3,3)
         volavg = volavg + volume
-!        write(*,*) 'volume', volume, traj % box(1,1), traj % box(2,2), traj % box(3,3)
+!        write(*,*) 'volume', volume, trajin % box(1,1), trajin % box(2,2), trajin % box(3,3)
 
-        ! record current time
-        timestamp(ixtc) = traj % time
 
         ! check the size of nwat matrix
         isize = size(comtraj(:,1,1))
         if(isize .lt. ixtc) then
-          allocate(temp(isize+nsize,nmolsys,3))
-          temp=0
-          temp(:isize,:,:)=comtraj
-          deallocate(comtraj)
-          allocate(comtraj(isize+nsize,nmolsys,3))
-          comtraj=temp
-          deallocate(temp)
-
-          allocate(temp(isize+nsize,nmolsys,3))
-          temp=0
-          temp(:isize,:,:)=mutraj
-          deallocate(mutraj)
-          allocate(mutraj(isize+nsize,nmolsys,3))
-          mutraj=temp
-          deallocate(temp)
-
-          allocate(tempbox(isize+nsize,3))
-          tempbox=0
-          tempbox(:isize,:)=boxtraj
-          deallocate(boxtraj)
-          allocate(boxtraj(isize+nsize,3))
-          boxtraj=tempbox
-          deallocate(tempbox)
-
-          allocate(temptime(isize+nsize))
-          temptime=0
-          temptime(:isize)=timestamp
-          deallocate(timestamp)
-          allocate(timestamp(isize+nsize))
-          timestamp=temptime
-          deallocate(temptime)
-
+          write(6,*) 'trajectory is longer than ', nsize
+          call expand3D(comtraj,nsize,0,0)
+          call expand3D(mutraj,nsize,0,0)
+          call expand2D(boxtraj,nsize,0)
+          call expand1D(timestamp,nsize)
           nsize = nsize*2
         endif
 
+        ! record current time
+        timestamp(ixtc) = trajin % time
+
         do k=1,3
-          boxtraj(ixtc,k) = traj % box(k,k)
+          boxtraj(ixtc,k) = trajin % box(k,k)
         enddo
 
         idxatom = 0
@@ -257,7 +237,7 @@ endif
               idxatom = idxatom +1
               mass = sys % moltype(i) % atommass(k)
               charge = sys % moltype(i) % atomcharge(k)
-              xpos(:) = traj % pos(:,idxatom)
+              xpos(:) = trajin % pos(:,idxatom)
               compos(:) = compos(:) + xpos(:)*mass
               mutot(:) = mutot(:) + xpos(:)*charge
             enddo
@@ -273,12 +253,12 @@ endif
         write(6,100) ixtc,'th frame has finished  ' 
  100    FORMAT('+', I5,A)  
 
-        call traj % read
+        call trajin % read
  
     end do
 
     ! 5. Close the file
-    call traj % close
+    call trajin % close
     end do
 
     nxtc = ixtc
@@ -292,40 +272,27 @@ endif
     ! check the size of trajectory matrix
     isize = size(comtraj(:,1,1))
     if(isize .gt. nxtc) then
-      allocate(temp(nxtc,nmolsys,3))
-      temp=0
-      temp(:,:,:)=comtraj(:nxtc,:,:)
-      deallocate(comtraj)
-      allocate(comtraj(nxtc,nmolsys,3))
-      comtraj=temp
-      deallocate(temp)
-
-      allocate(temp(nxtc,nmolsys,3))
-      temp=0
-      temp(:,:,:)=mutraj(:nxtc,:,:)
-      deallocate(mutraj)
-      allocate(mutraj(nxtc,nmolsys,3))
-      mutraj=temp
-      deallocate(temp)
+      call shrink3D(comtraj,nxtc,nmolsys,3)
+      call shrink3D(mutraj,nxtc,nmolsys,3)
+      call shrink2D(boxtraj,nxtc,3)
+      call shrink1D(timestamp,nxtc)
     endif
 
     write(6,*) 'copying position data into each ion matrices' 
     
-    allocate(comtrajcat(nxtc,nmolcat,3))
-    allocate(comtrajani(nxtc,nmolani,3))
-    allocate(mutrajcat(nxtc,nmolcat,3))
-    allocate(mutrajani(nxtc,nmolani,3))
-    allocate(mutrajrot(nxtc,3))
-    allocate(mutrajtrans(nxtc,3))
+    allocate(mutrajrot(numthread,nxtc,3))
+    allocate(mutrajtrans(numthread,nxtc,3))
+    allocate(mutrajrotsum(nxtc,3))
+    allocate(mutrajtranssum(nxtc,3))
+    allocate(muavg(numthread))
     allocate(idxPairIon(nxtc,nmolsys))
     allocate(distPairIon(nxtc,nmolsys))
     allocate(idxClustIons(nxtc,nmolsys,10))
-    comtrajcat(:,:,:) = comtraj(:,:nmolcat,:)
-    comtrajani(:,:,:) = comtraj(:,(nmolcat+1):,:)
-    mutrajcat(:,:,:) = mutraj(:,:nmolcat,:)
-    mutrajani(:,:,:) = mutraj(:,(nmolcat+1):,:)
+    muavg =  0
     mutrajrot = 0
     mutrajtrans = 0
+    mutrajrotsum = 0
+    mutrajtranssum = 0
 
     write(6,*) 'start generating neighborlist data'
     idx = 0
@@ -337,29 +304,42 @@ endif
 
       idxmol = 0
       do i=1, sys % nummoltype
+        molcharge = sys % moltype(i) % molcharge
+        threadid=1
+        !!$OMP PARALLEL &
+        !!$OMP   DEFAULT (FIRSTPRIVATE) &
+        !!$OMP   SHARED (mutrajtrans, mutrajrot, mutraj, muavg)
+        !threadid = omp_get_thread_num()+1
+        !write(6,*) threadid, 'th thread started!'
+        !!$OMP DO
         do j=1, sys % moltype(i) % nummol
-          idxmol = idxmol + 1
-          molcharge = sys % moltype(i) % molcharge
-          mutrans = comtraj(ixtc,idxmol,:)*molcharge
-          mutrajtrans(ixtc,:) = mutrajtrans(ixtc,:) + mutrans
-          mutrajrot(ixtc,:) = mutrajrot(ixtc,:) + mutraj(ixtc,idxmol,:) - mutrans
-        if (idxmol .le. 200) then
-          muavg = muavg + norm(mutraj(ixtc,idxmol,:) - mutrans)
-        endif
+          mutrans = comtraj(ixtc,idxmol+j,:)*molcharge
+          mutrajtrans(threadid,ixtc,:) = mutrajtrans(threadid,ixtc,:) + mutrans
+          mutrajrot(threadid,ixtc,:) = mutrajrot(threadid,ixtc,:) + mutraj(ixtc,idxmol+j,:) - mutrans
+          if (i .eq. 1) then
+            muavg(threadid) = muavg(threadid) + norm(mutraj(ixtc,idxmol+j,:) - mutrans)
+          endif
         enddo
+        !!$OMP END DO
+        !!$OMP END PARALLEL
+        idxmol = idxmol + sys % moltype(i) % nummol
       enddo
-
-      murotsq =  murotsq + dot_product(mutrajrot(ixtc,:),mutrajrot(ixtc,:))
-      mutranssq =  mutranssq + dot_product(mutrajtrans(ixtc,:),mutrajtrans(ixtc,:))
-      murottrans =  murottrans + dot_product(mutrajrot(ixtc,:),mutrajtrans(ixtc,:))
       write(6,100) ixtc,'th frame has finished  ' 
+    enddo
+
+    mutrajrotsum = sum(mutrajrot,dim=1)
+    mutrajtranssum = sum(mutrajtrans,dim=1)
+    do ixtc=1, nxtc
+      murotsq =  murotsq + dot_product(mutrajrotsum(ixtc,:),mutrajrotsum(ixtc,:))
+      mutranssq =  mutranssq + dot_product(mutrajtranssum(ixtc,:),mutrajtranssum(ixtc,:))
+      murottrans =  murottrans + dot_product(mutrajrotsum(ixtc,:),mutrajtranssum(ixtc,:))
 !      write(*,*) ixtc,dot_product(mutrajrot(ixtc,:),mutrajrot(ixtc,:)),dot_product(mutrajtrans(ixtc,:),mutrajtrans(ixtc,:)) 
     enddo
 
     murotsq = murotsq/nxtc
     mutranssq = mutranssq/nxtc
     murottrans = murottrans/nxtc
-    muavg = muavg/(nxtc*nmolcat)
+    muavg = muavg/(nxtc* sys % moltype(1) % nummol)
     
     close(6)
 
@@ -377,12 +357,12 @@ endif
     murot = 0
     mutrans = 0
     do i=1,nxtc
-      write(18,'(I5,3E15.7)') i,dot_product(mutrajrot(i,:),mutrajrot(i,:)),dot_product(mutrajtrans(i,:),mutrajtrans(i,:)),dot_product(mutrajrot(i,:),mutrajtrans(i,:)) 
-      rotsq = rotsq + dot_product(mutrajrot(i,:),mutrajrot(i,:))
-      transsq = transsq + dot_product(mutrajtrans(i,:),mutrajtrans(i,:))
-      rottrans = rottrans + dot_product(mutrajrot(i,:),mutrajtrans(i,:))
-      murot(:) = murot(:) + mutrajrot(i,:)
-      mutrans(:) = mutrans(:) + mutrajtrans(i,:)
+      write(18,'(I5,3E15.7)') i,dot_product(mutrajrotsum(i,:),mutrajrotsum(i,:)),dot_product(mutrajtranssum(i,:),mutrajtranssum(i,:)),dot_product(mutrajrotsum(i,:),mutrajtranssum(i,:)) 
+      rotsq = rotsq + dot_product(mutrajrotsum(i,:),mutrajrotsum(i,:))
+      transsq = transsq + dot_product(mutrajtranssum(i,:),mutrajtranssum(i,:))
+      rottrans = rottrans + dot_product(mutrajrotsum(i,:),mutrajtranssum(i,:))
+      murot(:) = murot(:) + mutrajrotsum(i,:)
+      mutrans(:) = mutrans(:) + mutrajtranssum(i,:)
     enddo
     rotsq = rotsq/nxtc
     transsq = transsq/nxtc
@@ -404,25 +384,5 @@ endif
     write(*,'(A15,1f8.4)') 'avgmu  ',muavg
     write(*,'(A15,1f8.4)') 'multiple  ',multiple
 
-
-
-contains
-
-real*8 function getdr( vec_dr, vec_box )
-    implicit none
-    real*8, intent(in), dimension(3) :: vec_box, vec_dr
-    real*8, dimension(3) :: tempvec
-
-    tempvec(:) = vec_dr(:) - (nint(vec_dr(:)/vec_box(:)))*vec_box(:)
-    getdr = norm(tempvec)
-end function getdr
-
-real*8 function norm( vec )
-    implicit none
-    real*8, intent(in), dimension(3) :: vec
-
-    norm = sqrt(vec(1)*vec(1) + vec(2)*vec(2) + vec(3)*vec(3))
-
-end function norm
 
 end program calc_dielect

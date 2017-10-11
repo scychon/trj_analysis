@@ -1,8 +1,8 @@
 [ xtcfiles ]
 1
-bmimC1Hnopol_bf4nopol_pbc.xtc
+eq_npt.dcd
 [ topfile ]
-param_bmimbf4.dat
+param_swm4.dat
 [ outfile ]
 dielect.dat
 [ temp ]
