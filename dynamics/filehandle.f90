@@ -34,6 +34,8 @@ contains
         bVelXtc=.false.
         bSingleChain=.true.
         bPolyStat=.false.
+        bSq=.false.
+        bSqTime=.false.
         bTemp=.false.
         bXtcFiles=.false.
 
@@ -56,6 +58,10 @@ contains
                bRotACF=.TRUE.
             case("-poly")
                bPolyStat=.TRUE.
+            case("-sq")
+               bSq=.TRUE.
+            case("-sqt")
+               bSqTime=.TRUE.
             case("-cond")
                bConduct=.TRUE.
             case("-vel")
@@ -66,6 +72,8 @@ contains
                bPolyStat=.TRUE.
                bConduct=.TRUE.
                bVelXtc=.TRUE.
+               bSq=.TRUE.
+               bSqTime=.TRUE.
           
             case default
             !Treat the second arg of a serie
@@ -212,6 +220,30 @@ contains
               read(7, *) temperature
               write(*,*) temperature
               bTemp = .true.
+            case ('skip')
+              read(7, *) nskip
+              write(*,*) 'calculate properties from every ',nskip,'th snapshots only'
+            case ('gr_skip')
+              read(7, *) nskipgr
+              write(*,*) 'calculate g(r) from every ',nskipgr,'th snapshots only'
+            case ('gr_bins')
+              read(7, *) nbins
+              write(*,*) 'number of bins for histogra of g(r) or S(q) : ',nbins
+            case ('grfile')
+              read(7, *) strGrFile
+              write(*,*) strGrFile
+            case ('Sqfile')
+              read(7, *) strSqFile
+              write(*,*) strSqFile
+            case ('Sq_rmax')
+              read(7, *) sqRmax
+              write(*,*) 'calculate g(r) from every ',nskipgr,'th snapshots only'
+            case ('AFF_file_dir')
+              read(7, *) strAFFDir
+              write(*,*) strAFFDir
+            case ('AFF_file_ext')
+              read(7, *) strAFFExt
+              write(*,*) strAFFExt
           end select
           read(7, '(A)',IOSTAT=ISTAT) line   ! search for header line
         enddo

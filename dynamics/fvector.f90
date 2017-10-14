@@ -113,7 +113,7 @@ contains
         implicit none
         real*8, intent(in), dimension(3) :: vec1, vec2
         real*8, dimension(3) :: vecAdd
-        vecAdd(:) = vec1(:) - vec2(:)
+        vecAdd(:) = vec1(:) + vec2(:)
     end function vecAdd
 
     function vecSquare( vec )
@@ -144,13 +144,22 @@ contains
     end function vecUnitNorm
     
 
-    real*8 function getdr( vec_dr, vec_box )
+    function getdrvec( vec1, vec2, vec_box )
         implicit none
-        real*8, intent(in), dimension(3) :: vec_box, vec_dr
-        real*8, dimension(3) :: tempvec
+        real*8, intent(in), dimension(3) :: vec_box, vec1, vec2
+        real*8, dimension(3) :: vec_dr
+        real*8, dimension(3) :: getdrvec
+   
+        vec_dr(:) = vec1(:) - vec2(:) 
+        getdrvec(:) = vec_dr(:) - (nint(vec_dr(:)/vec_box(:)))*vec_box(:)
+    end function getdrvec
     
-        tempvec(:) = vec_dr(:) - (nint(vec_dr(:)/vec_box(:)))*vec_box(:)
-        getdr = norm(tempvec)
+
+    real*8 function getdr( vec1, vec2, vec_box )
+        implicit none
+        real*8, intent(in), dimension(3) :: vec_box, vec1, vec2
+
+        getdr = norm(getdrvec(vec1,vec2,vec_box))
     end function getdr
     
     real*8 function norm( vec )

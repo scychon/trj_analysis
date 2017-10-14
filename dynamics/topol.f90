@@ -32,12 +32,16 @@ MODUlE topol
       real*8, allocatable :: atommass(:)
       real*8, allocatable :: atomredmass(:)
       real*8, allocatable :: atomcharge(:)
+      integer, allocatable :: atomTypeIdx(:)
+      character*4, allocatable :: atomtype(:)
     end type
  
     type, public :: topfile
       type(molecule), allocatable :: moltype(:)
+      character*4, allocatable :: atomtype(:)
+      integer, allocatable :: pairlist(:,:)
 !      type(molecule), pointer, allocatable :: sysmol(:)
-      integer      :: numsysmol, nummoltype, nsize_mol, nsize_atom
+      integer      :: numsysmol, numsysatom, nummoltype, numatomtype, nsize_mol, nsize_atom
     contains
       procedure :: init => init_top
     end type
@@ -55,13 +59,17 @@ contains
         character (len=*), intent(in) :: filename_in
         character (len=206) :: filename
         character(256):: line, str, strhead
-        character(5):: atomname,molname
+        character(5):: atomname,molname,atname1,atname2
         logical :: ex
-        integer :: i,j,k,nmoltype,nmol,natom,nmolsys
+        integer :: i,j,k,nmoltype,nmol,natom,nmolsys,natomtype
+        integer :: nUniqueAtomTypes,attype1,attype2
         integer :: ifile,iline, ISTAT, idx
         integer,dimension(3) :: idxs
         integer,dimension(2) :: pairs
         real*8  :: mass, molmass, charge
+        character*4 :: typename
+        character*4, allocatable :: tempAtomType(:)
+        logical :: bNewAtomType, bDrude
  
         inquire(file=trim(filename_in),exist=ex)
  
@@ -109,6 +117,8 @@ contains
               allocate(top % moltype(nmoltype))
 
               ! Read atomic masses for each molecule type
+              natomtype = 0
+              bDrude = .false.
               do i=1, nmoltype
                 read(7,'(A)') molname
                 read(7,*) natom
@@ -116,21 +126,57 @@ contains
                 top % moltype(i) % molarmass = 0
                 top % moltype(i) % molcharge = 0
                 top % moltype(i) % numatom = natom
+                allocate(top % moltype(i) % atomtype(natom))
+                allocate(top % moltype(i) % atomTypeIdx(natom))
                 allocate(top % moltype(i) % atommass(natom))
                 allocate(top % moltype(i) % atomredmass(natom))
                 allocate(top % moltype(i) % atomcharge(natom))
       
                 do j=1, natom
                   read(7,*) atomname, mass, charge
+                  top % moltype(i) % atomtype(j) = atomname
                   top % moltype(i) % atommass(j) = mass
                   top % moltype(i) % atomcharge(j) = charge
                   top % moltype(i) % molarmass = top % moltype(i) % molarmass + mass
                   top % moltype(i) % molcharge = top % moltype(i) % molcharge + charge
+                  if ( mass .le. 0) bDrude = .true.
                 enddo
                 do j=1, natom
                   top % moltype(i) % atomredmass(j) = top % moltype(i) % atommass(j) / top % moltype(i) % molarmass
                 enddo
+                natomtype = natomtype + natom
               enddo
+              ! store unique atomtypes in the topology
+              allocate(tempAtomType(natomtype))
+              nUniqueAtomTypes = 0
+              do i=1, nmoltype
+                do j=1, top % moltype(i) % numatom
+                  typename = top % moltype(i) % atomtype(j)
+                  ! check if it's shell atomtype
+                  if (top % moltype(i) % atommass(j) .le. 0) then
+                      top % moltype(i) % atomtypeidx(j) = -1
+                      cycle
+                  endif
+                  bNewAtomType = .true.
+                  ! check whether the atomtype is already defined
+                  do k=1, nUniqueAtomTypes
+                    if (typename .eq. tempAtomType(k)) then
+                      bNewAtomType = .false.
+                      top % moltype(i) % atomtypeidx(j) = k
+                      exit
+                    endif
+                  enddo
+                  if (bNewAtomType) then
+                    nUniqueAtomTypes = nUniqueAtomTypes + 1
+                    tempAtomType(nUniqueAtomTypes) = typename
+                    top % moltype(i) % atomtypeidx(j) = nUniqueAtomTypes
+                  endif
+                enddo
+              enddo
+
+              allocate(top % atomtype(nUniqueAtomTypes))
+              top % atomtype = tempAtomType(:nUniqueAtomTypes)
+
 
             ! # of molecules in system
             case ("system")
@@ -141,15 +187,16 @@ contains
       
               ! Read # of molecules for each moltype
               k = 0
+              natom = 0
               do i=1, nmoltype
                 read(7,*) molname, nmol
                 top % moltype(i) % nummol = nmol
+                natom = natom + nmol * top % moltype(i) % numatom
                 write(*,*) 'molcharge', top % moltype(i) % molcharge
                 write(*,*) 'molarmass', top % moltype(i) % molarmass
-                do j=1, nmol
-                  k = k+1
-                enddo
+                k = k+nmol
               enddo
+              top % numsysatom = natom
       
               if(k .ne. nmolsys) then
                   write(0,*)

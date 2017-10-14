@@ -37,7 +37,7 @@ MODULE variables
   character(len=256),allocatable,dimension(:) :: strVelXtcfiles
 
   logical   :: bMSDVec, bConduct, bMSD, bRotACF, bRotACFP2, bVelXtc
-  logical   :: bSingleChain, bPolyStat
+  logical   :: bSingleChain, bPolyStat, bSq, bSqTime
   logical   :: bTemp, bXtcFiles
 
 END MODULE variables
