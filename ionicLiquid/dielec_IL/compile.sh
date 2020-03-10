@@ -1,4 +1,1 @@
-export GMXXTC=$HOME/program/utility/trj_analysis/gmx_xtc
-export OPENMMDCD=$HOME/program/utility/trj_analysis/openmm_dcd
-
-gfortran $GMXXTC/xtc-interface-wrap.o $OPENMMDCD/dcdmod.o $OPENMMDCD/trajmod.o variables.f90 topol.f90 calc_corr.f90 main_ILpair.f90 -o corr -lxdrfile -L $GMXXTC/lib -I $GMXXTC -I $OPENMMDCD -fcheck=bounds
+gfortran $GMXXTC/xtc-interface-wrap.o $OPENMMDCD/dcdmod.o $OPENMMDCD/trajmod.o variables.f90 topol.f90 calc_corr.f90 main_ILpair.f90 -o calc_eps -lxdrfile -L $GMXXTC/lib -I $GMXXTC -I $OPENMMDCD -fcheck=bounds
