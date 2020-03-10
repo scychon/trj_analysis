@@ -158,7 +158,7 @@ endif
  
     call traj % read
 
-    OPEN (UNIT=6,FORM='FORMATTED',CARRIAGECONTROL='FORTRAN')
+    OPEN (UNIT=6,FORM='FORMATTED')
         ! Just an example to show what was read in
         write(6,'(a,f12.6,a,i0)') " Time (ps): ", traj % time, "  Step: ", traj % STEP
         write(6,'(a,f12.6,a,i0)') " Precision: ", traj % prec, "  No. Atoms: ", traj % NATOMS
@@ -229,8 +229,8 @@ endif
           enddo
         enddo 
 
-        write(6,100) ixtc,'th frame has finished  ' 
- 100    FORMAT('+', I5,A)  
+        write(6,100,advance='no') ixtc,'th frame has finished  '
+ 100    FORMAT(I5,A)
 
         call traj % read
  
@@ -313,7 +313,7 @@ endif
 
         enddo 
       enddo 
-      write(6,100) ixtc,'th frame has finished  ' 
+      write(6,100) ixtc,'th frame has finished  '
     enddo
 
     close(6)

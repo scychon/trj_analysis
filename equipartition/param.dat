@@ -1,6 +1,8 @@
-[ xtcfiles ]
+[ velfiles ]
 1
-../../data/bmimC1Hnopol_bf4nopol_pbc_20.xtc
+../data/bmimC1Hnopol_bf4nopol_pbc_20.xtc
+[ tempfile ]
+ketemp.dat
 [ topfile ]
 param_bmimbf4.dat
 [ msdfile ]

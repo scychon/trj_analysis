@@ -1,6 +1,6 @@
 [ xtcfiles ]
 1
-bmimC1Hnopol_bf4nopol_pbc.xtc
+../../data/bmimC1Hnopol_bf4nopol_pbc_20.xtc
 [ topfile ]
 param_bmimbf4.dat
 [ outfile ]

@@ -198,7 +198,7 @@ program calc_xqCF_rotACF
       stop
     endif
 
-    OPEN (UNIT=6,FORM='FORMATTED',CARRIAGECONTROL='FORTRAN')
+    OPEN (UNIT=6,FORM='FORMATTED')
         ! Just an example to show what was read in
         write(6,'(a,f12.6,a,i0)') " Time (ps): ", trajin % time, "  Step: ", trajin % STEP
         write(6,'(a,f12.6,a,i0)') " Precision: ", trajin % prec, "  No. Atoms: ", trajin % NATOMS
@@ -299,8 +299,8 @@ program calc_xqCF_rotACF
           stop
         endif
 
-        write(6,100) ixtc,'th frame has finished  ' 
- 100    FORMAT('+', I5,A)  
+        write(6,100,advance='no') ixtc,'th frame has finished  '
+ 100    FORMAT(I5,A)
 
         call trajin % read
  
@@ -507,8 +507,8 @@ program calc_xqCF_rotACF
     write(strfmt,'("( F12.3, ",I0,"ES15.7 )")') nmoltype+1
     write(strfmtmsd,'("( F12.3, ",I0,"ES15.7 )")') 4*(nmoltype+1)
     ! write (0,1) for auto correlation functions
-    write(20,strfmt) 0,rotACFt0
-    write(21,strfmt) 0,rotACFt0
+    write(20,strfmt) 0.d0,rotACFt0
+    write(21,strfmt) 0.d0,rotACFt0
     do idt=1,ndframe
      ! icnt = nACFTime(idt)
       icnt = nDiffTime(idt)
