@@ -39,7 +39,7 @@ contains
           enddo
         enddo
         corr_IP = corr_IP_cat + corr_IP_ani
-        write(6,100,advance='no') i,'th frame has finished  '
+        write(6,100,advance='no') achar(13), i,'th frame has finished  '
       enddo
       do i=1,nxtc
         corr_IP_cat(i) = corr_IP_cat(i)/(nmolcat*(nxtc-i+1))
@@ -47,7 +47,7 @@ contains
         corr_IP(i) = corr_IP(i)/(nmolsys*(nxtc-i+1))
       enddo
       write(*,*) 'calculating corr_IP finished'
- 100    FORMAT(I5,A)
+ 100    FORMAT(A,I5,A)
       close(6)
 
     end subroutine calc_corr_IP
@@ -80,7 +80,7 @@ contains
             if(tf) corr_CP_ani(j-i+1) = corr_CP_ani(j-i+1) + 1
           enddo
         enddo
-        write(6,100,advance='no') i,'th frame has finished  '
+        write(6,100,advance='no') achar(13), i,'th frame has finished  '
       enddo
       corr_CP = corr_CP_cat + corr_CP_ani
 
@@ -90,7 +90,7 @@ contains
         corr_CP(i) = corr_CP(i)/(nmolsys*(nxtc-i+1))
       enddo
       write(*,*) 'calculating corr_CP finished'
- 100    FORMAT(I5,A)
+ 100    FORMAT(A,I5,A)
       close(6)
 
     end subroutine calc_corr_CP

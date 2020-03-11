@@ -2,7 +2,7 @@
 1
 ../../data/bmimC1Hnopol_bf4nopol_pbc_20.xtc
 [ topfile ]
-param_bmimbf4.dat
+topol.dat
 [ outfile ]
 IP_cat_list.dat
 corr_IP.dat

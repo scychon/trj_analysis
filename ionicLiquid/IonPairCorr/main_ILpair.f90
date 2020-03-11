@@ -229,8 +229,8 @@ endif
           enddo
         enddo 
 
-        write(6,100,advance='no') ixtc,'th frame has finished  '
- 100    FORMAT(I5,A)
+        write(6,100,advance='no') achar(13),ixtc,'th frame has finished  '
+ 100    FORMAT(A,I5,A)
 
         call traj % read
  
@@ -313,10 +313,9 @@ endif
 
         enddo 
       enddo 
-      write(6,100) ixtc,'th frame has finished  '
+      write(6,100,advance='no') achar(13),ixtc,'th frame has finished  '
     enddo
 
-    close(6)
 
     open(18,file=strListFile)
     do i=1,nxtc

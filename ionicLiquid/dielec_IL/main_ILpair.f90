@@ -270,8 +270,8 @@ endif
           enddo
         enddo 
 
-        write(6,100,advance='no') ixtc,'th frame has finished  '
- 100    FORMAT(I5,A)
+        write(6,100,advance='no') achar(13), ixtc,'th frame has finished  '
+ 100    FORMAT(A,I5,A)
 
         call traj % read
  
@@ -352,7 +352,7 @@ endif
       murotsq =  murotsq + dot_product(mutrajrot(ixtc,:),mutrajrot(ixtc,:))
       mutranssq =  mutranssq + dot_product(mutrajtrans(ixtc,:),mutrajtrans(ixtc,:))
       murottrans =  murottrans + dot_product(mutrajrot(ixtc,:),mutrajtrans(ixtc,:))
-      write(6,100) ixtc,'th frame has finished  ' 
+      write(6,100,advance='no') achar(13), ixtc,'th frame has finished  ' 
 !      write(*,*) ixtc,dot_product(mutrajrot(ixtc,:),mutrajrot(ixtc,:)),dot_product(mutrajtrans(ixtc,:),mutrajtrans(ixtc,:)) 
     enddo
 
@@ -361,7 +361,6 @@ endif
     murottrans = murottrans/nxtc
     muavg = muavg/(nxtc*nmolcat)
     
-    close(6)
 
 !    mutrajrot=mutrajrot*multiple
 !    mutrajtrans=mutrajtrans*multiple

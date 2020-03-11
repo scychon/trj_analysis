@@ -299,8 +299,8 @@ program calc_xqCF_rotACF
           stop
         endif
 
-        write(6,100,advance='no') ixtc,'th frame has finished  '
- 100    FORMAT(I5,A)
+        write(6,100,advance='no') achar(13), ixtc,'th frame has finished  '
+ 100    FORMAT(A,I5,A)
 
         call trajin % read
  
@@ -461,7 +461,7 @@ program calc_xqCF_rotACF
       enddo
       !$OMP END DO
       !$OMP END PARALLEL
-      write(6,100) i,'th frame has finished  ' 
+      write(6,100,advance='no') achar(13), i,'th frame has finished  ' 
     enddo
 
     call date_and_time(values=time_array_1)
