@@ -1,0 +1,13 @@
+[ xtcfiles ]
+1
+../data/bmimC1Hnopol_bf4nopol_pbc_20.xtc
+[ topfile ]
+topol.dat
+[ cosfile ]
+cos.dat
+[ cossqfile ]
+cossq.dat
+[ temp ]
+400
+[ cos_axis ]
+1.0 1.0 1.0
