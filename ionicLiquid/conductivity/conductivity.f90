@@ -166,7 +166,8 @@ program calc_xqCF_rotACF
     do i=1, sys % nummoltype
       nmolMolType(i) = sys % moltype(i) % nummol
       nsysatoms = nsysatoms + nmolMolType(i) * sys % moltype(i) % numatom
-      do j=1, nmolMolType(i)
+      nmolcurr = nmolMolType(i)
+      do j=1, nmolcurr
         idxmol = idxmol + 1
         molTypeIdxs(idxmol) = i
       enddo
