@@ -23,7 +23,8 @@ program calc_xqCF_rotACF
   integer            :: nbins=200                   !# of bins 
   integer            :: nskip=100                   !# of bins 
   integer            :: nsize=10000                 !# of bins 
-  integer            :: i,j,k,l,icnt,idx,ixtc,idxmol,idxatom,idxmoltype           !counters
+  integer            :: i,j,k,l,icnt,idx,ixtc,idxmol,idxatom,idxmoltype,idxcurr,idxcurr2      !counters
+  integer            :: idxlast                     ! last index for xqcomCFTime
   integer            :: isize,ifile                  !counters
   integer            :: ctime_0, ctime_1, ctime_rate, ctime_max          !counters_for_timer
   integer            :: narg, cptArg       !#of arg & counter of arg
@@ -55,8 +56,8 @@ program calc_xqCF_rotACF
   real*8, allocatable,dimension(:,:) :: xposframe   !matrix for positions in the frame
   real*8, allocatable,dimension(:) :: temptime     !matrix for timestamps
   real*8, allocatable,dimension(:) :: Sc     !matrix for q*xyz for each timestep
-  real*8, allocatable,dimension(:) :: molTypeIdxs     ! array for molecule type idx of each moleclue ( molecule idx )
-  real*8, allocatable,dimension(:) :: nmolMolType    ! array for number of molecules in each moltype ( moltype idx )
+  integer, allocatable,dimension(:) :: molTypeIdxs     ! array for molecule type idx of each moleclue ( molecule idx )
+  integer, allocatable,dimension(:) :: nmolMolType    ! array for number of molecules in each moltype ( moltype idx )
 
   ! matrices for time stamps
   real*8, allocatable,dimension(:) :: timestamp, timestep     !matrix for timestamps
@@ -73,10 +74,11 @@ program calc_xqCF_rotACF
   real*8, allocatable,dimension(:,:,:) :: xqAtomsTraj     ! matrix for q*xyz of each atom at each timestep (frame idx, atom idx, q*xyz)
   real*8, allocatable,dimension(:) :: xqAtomsCFTime     ! matrix for conduct correlation function of each atom at each dt (time difference dt in unit of time step, atom idx)
   real*8, allocatable,dimension(:,:) :: xqAtomsCFTimeThread     ! matrix for conduct correlation function of each atom at each dt (time difference dt in unit of time step, atom idx)
-  real*8, allocatable,dimension(:) :: xqcomCFTime     ! matrix for conduct correlation function of each molecule at each dt (time difference dt in unit of time step, mol idx, q*xyz)
-  real*8, allocatable,dimension(:,:) :: xqcomCFTimeThread     ! matrix for conduct correlation function of each molecule at each dt (time difference dt in unit of time step, mol idx, q*xyz)
+  real*8, allocatable,dimension(:,:) :: xqcomCFTime     ! matrix for conduct correlation function of each molecule at each dt (time difference dt in unit of time step, mol idx, q*xyz)
+  real*8, allocatable,dimension(:,:,:) :: xqcomCFTimeThread     ! matrix for conduct correlation function of each molecule at each dt (time difference dt in unit of time step, mol idx, q*xyz)
   real*8, allocatable,dimension(:,:) :: xqcomDiff     ! matrix for difference of xq_xyz of each molecules at each time step combination (ixtc,jxtc,idxmol,3)
-  real*8,dimension(3)    :: xqdiff1,xqdiff2
+  real*8, allocatable,dimension(:) :: qmolMolType     ! matrix for molecular charge of each moltype (nmoltype)
+  real*8,dimension(3)    :: xqdiff1,xqdiff2,xqdiffsum
 
 
   ! for MSD calculation
@@ -97,7 +99,7 @@ program calc_xqCF_rotACF
   real*8, allocatable,dimension(:,:,:) :: rotACFTimeThread,rotACFTimeP2Thread     ! rotational ACF <ui(t2).ui(t1)> of each molecule types at each time difference (time difference dt in unit of time step, moltype idx i )
   real*8, allocatable,dimension(:) :: rotACFt0     ! rotational ACF <ui(t2).ui(t1)> of each molecule types at each time difference (time difference dt in unit of time step, moltype idx i )
 
-  character(len=30)          :: strfmt, strfmtmsd
+  character(len=30)          :: strfmt, strfmtmsd, strfmtconduct
   character(len=256)         :: strout,strtitle
   character(len=256)         :: str, line
   character(len=256),allocatable,dimension(:) :: aStrArgs
@@ -162,6 +164,7 @@ program calc_xqCF_rotACF
     nmoltype = sys % nummoltype
     allocate(molTypeIdxs(nmolsys))
     allocate(nmolMolType(nmoltype))
+    allocate(qmolMolType(nmoltype))
     idxmol = 0
     do i=1, sys % nummoltype
       nmolMolType(i) = sys % moltype(i) % nummol
@@ -260,10 +263,10 @@ program calc_xqCF_rotACF
         idxmol = 0
         xposframe = trajin % pos
         do i=1, sys % nummoltype
-          !$OMP PARALLEL &
-          !$OMP   DEFAULT (FIRSTPRIVATE) &
-          !$OMP   SHARED (unitNormMolTraj, comtraj, mutraj)
-          !$OMP DO
+!          !$OMP PARALLEL &
+!          !$OMP   DEFAULT (FIRSTPRIVATE) &
+!          !$OMP   SHARED (unitNormMolTraj, comtraj, mutraj)
+!          !$OMP DO
           do j=1, sys % moltype(i) % nummol
             compos = 0
             mutot = 0
@@ -293,8 +296,8 @@ program calc_xqCF_rotACF
             mutraj(ixtc,idxmol+j,:) = mutot(:)
 !            write(*,*) comtraj(ixtc,idxmol+j,:)
           enddo
-          !$OMP END DO
-          !$OMP END PARALLEL
+!          !$OMP END DO
+!          !$OMP END PARALLEL
           idxmol = idxmol + sys % moltype(i) % nummol
           idxatom = idxatom + sys % moltype(i) % nummol * sys % moltype(i) % numatom
         enddo 
@@ -303,10 +306,10 @@ program calc_xqCF_rotACF
         if(ixtc .eq. 1) then
           comUnwrapTraj(ixtc,:,:) = comtraj(ixtc,:,:)
         else if (ixtc .gt. 1) then
-          !$OMP PARALLEL &
-          !$OMP   DEFAULT (FIRSTPRIVATE) &
-          !$OMP   SHARED (comtraj, comMolDiff, comUnwrapTraj)
-          !$OMP DO
+!          !$OMP PARALLEL &
+!          !$OMP   DEFAULT (FIRSTPRIVATE) &
+!          !$OMP   SHARED (comtraj, comMolDiff, comUnwrapTraj)
+!          !$OMP DO
           do i=1, nmolsys
             comMolDiff(i,:) = comtraj(ixtc,i,:) - comtraj(ixtc-1,i,:)
             comMolDiff(i,1) = comMolDiff(i,1) - NINT(comMolDiff(i,1)/sysbox(1))*sysbox(1)
@@ -314,8 +317,8 @@ program calc_xqCF_rotACF
             comMolDiff(i,3) = comMolDiff(i,3) - NINT(comMolDiff(i,3)/sysbox(3))*sysbox(3)
             comUnwrapTraj(ixtc,i,:) = comUnwrapTraj(ixtc-1,i,:)+comMolDiff(i,:)
           enddo
-          !$OMP END DO
-          !$OMP END PARALLEL
+!          !$OMP END DO
+!          !$OMP END PARALLEL
         endif 
 
         ! check number of atoms in system
@@ -380,7 +383,12 @@ program calc_xqCF_rotACF
     write(6,*) 'unitNormMolt1 & unitNormMolDiff allocated' 
 
 !    allocate(xqAtomsCFTime(ndframe))
-    allocate(xqcomCFTime(ndframe))
+    if (bCalcTransfer) then
+        idxlast = (nmoltype)*(nmoltype)+1
+    else
+        idxlast = 1
+    endif
+    allocate(xqcomCFTime(ndframe,idxlast))
     write(6,*) 'xqcomCFTime allocated' 
     allocate(xqcomDiff(nmolsys,3))
     write(6,*) 'xqcomDiff allocated' 
@@ -415,6 +423,7 @@ program calc_xqCF_rotACF
     idxmol = 0
     do i=1, sys % nummoltype
       molcharge = sys % moltype(i) % molcharge
+      qmolMolType(i) = molcharge
       !$OMP PARALLEL &
       !$OMP   DEFAULT (FIRSTPRIVATE) &
       !$OMP   SHARED (comtraj,comUnwrapTraj,xqcomTraj)
@@ -444,7 +453,8 @@ program calc_xqCF_rotACF
 !      write(6,*) 'test line'
       !$OMP PARALLEL &
       !$OMP PRIVATE(t2,dt,idt,comMolDiff,unitNormMolt2,idxmol,xqcomDiff, &
-      !$OMP         xqdiff1,k,idxmoltype,nmolcurr,xdiff,msd,msd_axis,rotacf)
+      !$OMP         xqdiff1,k,idxmoltype,nmolcurr,xdiff,msd,msd_axis,rotacf, &
+      !$OMP         xqdiff2, xqdiffsum, l,idxcurr)
       !$OMP DO
       do j=i+1,nxtc
         t2 = timestamp(j)
@@ -471,7 +481,6 @@ program calc_xqCF_rotACF
 
         idxmol = 0
         xqcomDiff(:,:) = xqcomTraj(i,:,:)-xqcomTraj(j,:,:)
-        xqdiff1 = 0
         do k=1,nmolsys
           idxmoltype = molTypeIdxs(k)
           nmolcurr = nmolMolType(idxmoltype)
@@ -493,16 +502,29 @@ program calc_xqCF_rotACF
           rotacf = rotacf*rotacf
           rotACFTimeP2(idt,idxmoltype) = rotACFTimeP2(idt,idxmoltype) + rotacf/nmolcurr
           rotACFTimeP2(idt,nmoltype+1) = rotACFTimeP2(idt,nmoltype+1) + rotacf/nmolsys
-          xqdiff1(:) = xqdiff1(:) + xqcomDiff(k,:)
         enddo
 
-            xqcomCFTime(idt) = xqcomCFTime(idt) + dot_product(xqdiff1,xqdiff1)
-!        do k=1,nmolsys
-!          xqdiff1(:) = xqcomDiff(k,:)
-!          do l=1,nmolsys
-!            xqdiff2(:) = xqcomDiff(l,:)
-!          enddo
-!        enddo
+        if (bCalcTransfer) then
+            do k=1,nmolsys
+              if (qmolMoltype(molTypeIdxs(k)) .eq. 0) cycle
+              xqdiff1(:) = xqcomDiff(k,:)
+              do l=k,nmolsys
+                if (qmolMoltype(molTypeIdxs(l)) .eq. 0) cycle
+                xqdiff2(:) = xqcomDiff(l,:)
+                idxcurr = molTypeIdxs(l) + (molTypeIdxs(k)-1)*(nmoltype)
+                if (l==k) then
+                    xqcomCFTime(idt,idxcurr) = xqcomCFTime(idt,idxcurr) + dot_product(xqdiff1,xqdiff2)
+                else
+                    xqcomCFTime(idt,idxcurr) = xqcomCFTime(idt,idxcurr) + 2*dot_product(xqdiff1,xqdiff2)
+                endif
+              enddo
+            enddo
+        endif
+        xqdiff1 = 0
+        do k=1,nmolsys
+            xqdiff1(:) = xqdiff1(:) + xqcomDiff(k,:)
+        enddo
+        xqcomCFTime(idt,idxlast) = xqcomCFTime(idt,idxlast) + dot_product(xqdiff1,xqdiff1)
 
       enddo
       !$OMP END DO
@@ -547,11 +569,25 @@ program calc_xqCF_rotACF
 
 !    xqAtomsCFTime = xqAtomsCFTime*multiConduct
     xqcomCFTime = xqcomCFTime*multiConduct
+    if (bCalcTransfer) then
+      do k=1,nmoltype-1
+        do l=k+1,nmoltype
+            idxcurr = l + (k-1)*nmoltype
+            idxcurr2 = k + (l-1)*nmoltype
+            xqcomCFTime(:,idxcurr2) = xqcomCFTime(:,idxcurr)
+        enddo
+      enddo
+    endif
 
 
     write(18,'(A5,3E15.7)') 'tot  ',rotsq,transsq,rottrans
     write(strfmt,'("( F12.3, ",I0,"ES15.7 )")') nmoltype+1
     write(strfmtmsd,'("( F12.3, ",I0,"ES15.7 )")') 5*(nmoltype+1)
+    if (bCalcTransfer) then
+        write(strfmtconduct,'("( F12.3, ",I0,"ES15.7 )")') (nmoltype)*(nmoltype)+1
+    else
+        write(strfmtconduct,'("( F12.3, ES15.7 )")') 
+    endif
     ! write (0,1) for auto correlation functions
     write(20,strfmt) 0.d0,rotACFt0
     write(21,strfmt) 0.d0,rotACFt0
@@ -567,8 +603,8 @@ program calc_xqCF_rotACF
       if(msdTime(idt,5,nmoltype+1) .ne. 0) then
         write(18,strfmtmsd) dt0*idt,msdTime(idt,:,:)/icnt
       endif
-      if(xqcomCFTime(idt) .ne. 0) then
-        write(19,'(F12.3,ES15.7)') dt0*idt,xqcomCFTime(idt)/icnt
+      if(xqcomCFTime(idt,idxlast) .ne. 0) then
+        write(19,strfmtconduct) dt0*idt,xqcomCFTime(idt,:)/icnt
       endif
 
       if(rotACFTime(idt,nmoltype+1) .ne. 0) then

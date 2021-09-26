@@ -19,5 +19,6 @@ MODULE variables
   character(len=256)         :: strInFile, strOutFile, strTopFile
   character(len=256)         :: strMSDFile, strIPFile, strCPFile,strConductFile,strRotACFFile,strRotACFP2File
   character(len=256),allocatable,dimension(:) :: strXtcfiles
+  logical :: bCalcTransfer
 
 END MODULE variables

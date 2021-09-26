@@ -10,6 +10,21 @@ MODUlE filehandle
  
 contains
 
+
+    pure function getLowerCase(string) result(output)
+        ! convert string to lower-case
+        character(*), intent(in)    :: string
+        integer, parameter          :: DUC = ichar('A') - ichar('a')
+        character(len(string))      :: output
+        character                   :: ch
+        integer                     :: i
+        do i = 1,len(string)
+            ch = string(i:i)
+            if (ch>='A' .and. ch<='Z') ch = char(ichar(ch)-DUC)
+            output(i:i) = ch
+        end do
+    end function getLowerCase
+
     ! Subroutine to get command arguments and assign input and output file name
     subroutine getargs ( aStrArgs )
         use variables
@@ -69,13 +84,6 @@ contains
           write(*,*) 'usage : conductivity -f param.dat -o outfile.dat'
           stop
         endif
-        
-        if(strOutFile .eq. "") then
-          write(*,*) 'usage : conductivity -f param.dat -o outfile.dat'
-          write(*,*) 'output file has not set'
-          write(*,*) 'will use default outfile name conductivity_out.dat'
-          strOutFile = 'conductivity_out.dat'
-        endif
 
     end subroutine getargs
 
@@ -84,41 +92,86 @@ contains
         use variables
         use fvector
         implicit none
-        integer :: ifile
-        character(len=256)         :: str, line
+        integer :: ifile,iline, ISTAT, idx
+        character(len=256)         :: str, line, strhead, strCalcTf
 
         strTopFile = ""
+        bCalcTransfer = .false.
+        write(*,*) 'start reading paramdat'
         OPEN(unit=7,file=strInFile,status='old')
-        read(7, '(A)') line
-        write(*,*) trim(line)
-        read(7,*) nxtcfile
-        write(*,*) nxtcfile
-        allocate(strXtcfiles(nxtcfile))
-        do ifile=1,nxtcfile
-          read(7,'(A)') strXtcfiles(ifile)
-          write(*,*) trim(strXtcfiles(ifile))
+        iline=0
+        read(7, '(A)',IOSTAT=ISTAT) line   ! search for header line
+        do while (ISTAT .eq. 0)
+          iline = iline + 1
+          line = adjustl(line)
+          write(*,*) trim(line)
+          ! check whether it has only comments
+          idx = min(index(line,'!'),index(line,'#'))
+          if (idx .gt. 0) then
+            line = line(:idx-1)
+          endif
+          if (len(trim(line)) .eq. 0) then
+            continue   ! no info in the line
+          endif
+
+          if (line(:1) .eq. '[') then
+            strhead = trim(adjustl(line(2:(index(line,']')-1))))
+          else
+            write(*,*) 'Error in input file ',strInFile
+            write(*,*) iline, 'th line does not contain proper data !'
+            stop
+          endif
+
+          select case (strhead)
+            case ("xtcfiles", "dcdfiles", "trajfiles")
+              read(7,*) nxtcfile
+              write(*,*) nxtcfile
+              allocate(strXtcfiles(nxtcfile))
+              do ifile=1,nxtcfile
+                read(7,'(A)') strXtcfiles(ifile)
+                write(*,*) trim(strXtcfiles(ifile))
+              enddo
+            case ('topfile')
+              read(7, '(A)') strTopFile
+              write(*,*) strTopFile
+            case ('msdfile')
+              read(7, '(A)') strMSDFile
+              write(*,*) strMSDFile
+            case ('conductivity output file')
+              read(7, '(A)') strConductFile
+              write(*,*) strConductFile
+            case ('rotational ACF file')
+              read(7, '(A)') strRotACFFile
+              write(*,*) strRotACFFile
+            case ('rotational ACF P2 file')
+              read(7, '(A)') strRotACFP2File
+              write(*,*) iline, strRotACFP2File
+            case ('temp')
+              read(7, *) temperature
+              write(*,*) iline, temperature
+            case ('msd_axis','msd_vec')
+              read(7, *) msd_vec
+              write(*,*) iline, msd_vec
+            case ('calc_transference')
+              read(7, *) strCalcTf
+              write(*,*) iline, strCalcTf
+              if (getLowerCase(strCalcTf) .eq. "true") then
+                bCalcTransfer = .true.
+              endif
+          end select
+          read(7, '(A)',IOSTAT=ISTAT) line   ! search for header line
         enddo
-        read(7, '(A)') line
-        write(*,*) line
-        read(7, '(A)') strTopFile
-        write(*,*) strTopFile
-        read(7, '(A)') line
-        read(7, '(A)') strMSDFile
-        read(7, '(A)') line
-        read(7, '(A)') strConductFile
-        read(7, '(A)') line
-        read(7, '(A)') strRotACFFile
-        read(7, '(A)') line
-        read(7, '(A)') strRotACFP2File
-        read(7, '(A)') line
-        read(7, *) temperature
-        read(7, '(A)') line
-        read(7, *) msd_vec
         close(7)
+
+        if(strTopFile .eq. "") then
+          write(*,*) 'topology file is not set in your parameter file ', strInFile
+          write(*,*) 'will use default topfile name conparam_bmimbf4.dat'
+          strTopFile = 'param_bmimbf4.dat'
+        endif
 
         msd_vec = msd_vec/norm(msd_vec)
         if(strTopFile .eq. "") then
-          write(*,*) 'topology file is not set in your parameter file', strInFile
+          write(*,*) 'topology file is not set in your parameter file ', strInFile
           write(*,*) 'will use default topfile name conparam_bmimbf4.dat'
           strTopFile = 'param_bmimbf4.dat'
         endif
