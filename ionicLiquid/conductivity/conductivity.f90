@@ -388,22 +388,22 @@ program calc_xqCF_rotACF
     else
         idxlast = 1
     endif
-    allocate(xqcomCFTime(ndframe,idxlast))
+    allocate(xqcomCFTime(ndframe*numthread,idxlast))
     write(6,*) 'xqcomCFTime allocated' 
     allocate(xqcomDiff(nmolsys,3))
     write(6,*) 'xqcomDiff allocated' 
-    allocate(msdTime(ndframe,5,nmoltype+1))
+    allocate(msdTime(ndframe*numthread,5,nmoltype+1))
     write(6,*) 'msdTime allocated' 
-    allocate(rotACFTime(ndframe,nmoltype+1))
+    allocate(rotACFTime(ndframe*numthread,nmoltype+1))
     write(6,*) 'rotACFTime allocated' 
-    allocate(rotACFTimeP2(ndframe,nmoltype+1))
+    allocate(rotACFTimeP2(ndframe*numthread,nmoltype+1))
     write(6,*) 'rotACFTimeP2 allocated' 
  !   allocate(rotacf(nxtc-1,nxtc,nmolsys))
 !    allocate(xqAtomsDiff(nxtc-1,nxtc,nsysatoms,3))
     allocate(xqcomTraj(nxtc,nmolsys,3))
     write(6,*) 'xqcomTraj allocated' 
  !   allocate(nACFTime(ndframe))
-    allocate(nDiffTime(ndframe))
+    allocate(nDiffTime(ndframe*numthread))
     write(6,*) 'nDiffTime allocated' 
     allocate(rotACFt0(nmoltype+1))
 !    xqAtomsCFTime = 0
@@ -443,19 +443,21 @@ program calc_xqCF_rotACF
     
     call date_and_time(values=time_array_0)
     write(6,*) 'Start time : ', time_array_0
+    !$OMP PARALLEL &
+    !$OMP PRIVATE(t1,unitNormMolt1,threadid,t2,dt,idt,comMolDiff,unitNormMolt2, &
+    !$OMP         j,xqdiff1,k,idxmoltype,nmolcurr,xdiff,msd,msd_axis,rotacf, &
+    !$OMP         idxmol,xqcomDiff, xqdiff2, xqdiffsum, l,idxcurr)
+    !$OMP DO SCHEDULE(dynamic)
     do i=1,nxtc-1
+      threadid = omp_get_thread_num()
       if ((i .gt. 100) .and. (mod(i,100) .ne. 0)) then
+        !write(6,*) 'skip threadid', threadid, 'i', i, 'mod(i)',mod(i,100)
         cycle
       endif
       t1 = timestamp(i)
       unitNormMolt1(:,:) = unitNormMolTraj(i,:,:)
 !      write(6,*) 'unitNormMol set'
 !      write(6,*) 'test line'
-      !$OMP PARALLEL &
-      !$OMP PRIVATE(t2,dt,idt,comMolDiff,unitNormMolt2,idxmol,xqcomDiff, &
-      !$OMP         xqdiff1,k,idxmoltype,nmolcurr,xdiff,msd,msd_axis,rotacf, &
-      !$OMP         xqdiff2, xqdiffsum, l,idxcurr)
-      !$OMP DO
       do j=i+1,nxtc
         t2 = timestamp(j)
         dt = t2 - t1
@@ -472,6 +474,7 @@ program calc_xqCF_rotACF
         elseif((idt .gt. 10000) .and. (mod(idt,100) .ne. 0) ) then
           cycle
         endif
+        idt = idt + (threadid)*ndframe
         !comMolDiff(:,:) = comtraj(i,:,:)- comtraj(j,:,:)
         comMolDiff(:,:) = comUnwrapTraj(i,:,:)- comUnwrapTraj(j,:,:)
         unitNormMolt2(:,:) = unitNormMolTraj(j,:,:)
@@ -527,10 +530,29 @@ program calc_xqCF_rotACF
         xqcomCFTime(idt,idxlast) = xqcomCFTime(idt,idxlast) + dot_product(xqdiff1,xqdiff1)
 
       enddo
-      !$OMP END DO
-      !$OMP END PARALLEL
-      write(6,100,advance='no') achar(13), i,'th frame has finished  ' 
+      if (threadid .eq. 0) then
+          write(6,100,advance='no') achar(13), i,'th frame has finished  ' 
+      endif
     enddo
+    !$OMP END DO NOWAIT
+    !$OMP END PARALLEL
+
+    !$OMP PARALLEL &
+    !$OMP PRIVATE(i)
+    !$OMP DO
+    do idt=1,ndframe
+        do i=1,numthread-1
+            msdTime(idt,:,:) = msdTime(idt,:,:) + msdTime(idt+i*ndframe,:,:)
+            rotACFTime(idt,:) = rotACFTime(idt,:) + rotACFTime(idt+i*ndframe,:)
+            rotACFTimeP2(idt,:) = rotACFTimeP2(idt,:) + rotACFTimeP2(idt+i*ndframe,:)
+            xqcomCFTime(idt,:) = xqcomCFTime(idt,:) + xqcomCFTime(idt+i*ndframe,:)
+            nDiffTime(idt) = nDiffTime(idt) + nDiffTime(idt+i*ndframe)
+        enddo
+    enddo
+    !$OMP END DO NOWAIT
+    !$OMP END PARALLEL
+
+
 
     call date_and_time(values=time_array_1)
     write(6,*) 'End time : ', time_array_1
@@ -574,7 +596,9 @@ program calc_xqCF_rotACF
         do l=k+1,nmoltype
             idxcurr = l + (k-1)*nmoltype
             idxcurr2 = k + (l-1)*nmoltype
-            xqcomCFTime(:,idxcurr2) = xqcomCFTime(:,idxcurr)
+            ! divide cross correlation terms by 2 and duplicate it to symmetrize the correlation matrix
+            xqcomCFTime(:,idxcurr2) = xqcomCFTime(:,idxcurr)*.5d0
+            xqcomCFTime(:,idxcurr) = xqcomCFTime(:,idxcurr2)
         enddo
       enddo
     endif
